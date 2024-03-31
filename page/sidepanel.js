@@ -648,15 +648,38 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				tabs[prevTab].click();
 			}
 		},
+		13: {
+			handler: (event) => {
+				if (event.target.tagName.toLowerCase() === "input" && event.target.id === "search-input") {
+					document.getElementById("search-btn").click();
+				}
+			},
+			preventInInput: false,
+		},
 	};
 	document.addEventListener("keydown", (event) => {
-		if (["input", "textarea"].includes(event.target.tagName.toLowerCase())) {
+		let handler = null;
+		let preventInInput = true;
+		if (keyMap[event.key]) {
+			handler = keyMap[event.key];
+		} else if (keyMap[event.code]) {
+			handler = keyMap[event.code]();
+		}
+
+		if (!handler) {
+			return;
+		}
+		if (typeof handler !== "function") {
+			handler = handler.handler;
+			preventInInput = !!handler?.preventInInput;
+		}
+
+		if (["input", "textarea"].includes(event.target.tagName.toLowerCase()) && preventInInput) {
 			return;
 		}
 
-		if (keyMap[event.key]) {
-			keyMap[event.key]();
-		}
+		event.preventDefault();
+		handler(event);
 	});
 
 	/** Init */
