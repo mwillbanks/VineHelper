@@ -745,37 +745,36 @@ browser.runtime.onMessage.addListener(async (data, sender, sendResponse) => {
 
 	if (data.type == "newItem") {
 		sendResponse({ success: true });
+		// if (
+		// 	data.index < 10 && //Limit the notification to the top 10 most recents
+		// 	vineBrowsingListing && //Only show notification on listing pages
+		// 	appSettings.general.displayNewItemNotifications
+		// ) {
+		// 	console.log("New notification!");
+		// 	let { date, asin, title, search, img_url, domain, etv } = data;
 
-		if (
-			data.index < 10 && //Limit the notification to the top 10 most recents
-			vineBrowsingListing && //Only show notification on listing pages
-			appSettings.general.displayNewItemNotifications
-		) {
-			console.log("New notification!");
-			let { date, asin, title, search, img_url, domain, etv } = data;
+		// 	//Generate the content to be displayed in the notification
+		// 	const prom = await Tpl.loadFile("/view/notification_new_item.html");
 
-			//Generate the content to be displayed in the notification
-			const prom = await Tpl.loadFile("/view/notification_new_item.html");
+		// 	Tpl.setIf("show_image", appSettings.general.newItemNotificationImage);
+		// 	Tpl.setVar("date", date);
+		// 	Tpl.setVar("search", search);
+		// 	Tpl.setVar("asin", asin);
+		// 	Tpl.setVar("description", title);
+		// 	Tpl.setVar("img_url", img_url);
 
-			Tpl.setIf("show_image", appSettings.general.newItemNotificationImage);
-			Tpl.setVar("date", date);
-			Tpl.setVar("search", search);
-			Tpl.setVar("asin", asin);
-			Tpl.setVar("description", title);
-			Tpl.setVar("img_url", img_url);
+		// 	//Generate the notification
+		// 	let note2 = new ScreenNotification();
+		// 	note2.title = "New item detected !";
+		// 	note2.lifespan = 60;
 
-			//Generate the notification
-			let note2 = new ScreenNotification();
-			note2.title = "New item detected !";
-			note2.lifespan = 60;
-
-			//Play the notification sound
-			if (appSettings.general.newItemNotificationSound) {
-				note2.sound = "resource/sound/notification.mp3";
-			}
-			note2.content = Tpl.render(prom);
-			Notifications.pushNotification(note2);
-		}
+		// 	//Play the notification sound
+		// 	if (appSettings.general.newItemNotificationSound) {
+		// 		note2.sound = "resource/sound/notification.mp3";
+		// 	}
+		// 	note2.content = Tpl.render(prom);
+		// 	Notifications.pushNotification(note2);
+		// }
 	}
 	if (data.type == "vineCountry") {
 		sendResponse({ success: true });

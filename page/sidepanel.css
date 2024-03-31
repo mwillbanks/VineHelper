@@ -1,0 +1,88 @@
+@keyframes rotate360 {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+
+#vh-tabs-nav .nav-link {
+  color: var(--bs-success-text-emphasis);
+}
+
+.animate-spin {
+  animation: rotate360 2s linear infinite;
+}
+
+.btn-group {
+	width: 100%;
+}
+.card {
+	--bs-card-cap-padding-y: 0.25rem;
+	--bs-card-cap-padding-x: 0.25rem;
+}
+.card-header {
+	font-size: 0.8rem;
+	font-weight: bold;
+	overflow: hidden;
+	text-wrap: nowrap;
+	white-space: nowrap;
+}
+.card-footer {
+	font-size: 0.8rem;
+	font-weight: bold;
+	overflow: hidden;
+	text-wrap: nowrap;
+	white-space: nowrap;
+}
+.card img.card-img-top.img-thumbnail {
+  background: transparent;
+  border: 0;
+  transform-origin: center center;
+  transition: transform 1s, filter .5s ease-out;
+}
+.card img.card-img-top.img-thumbnail:hover {
+  transform: scale(1.5);
+  z-index: 4;
+  border: 1px solid black;
+  background: var(--bs-body-bg);
+}
+.etv {
+	color: var(--bs-success-text-emphasis);
+}
+.row {
+	--bs-gutter-x: 0;
+	--bs-gutter-y: 0;
+}
+
+.vh-feed-controls .bi {
+	cursor: pointer;
+	color: --bs-primary;
+  --bs-btn-padding-x: 0.25rem;
+  --bs-btn-padding-y: 0.1rem;
+}
+
+.vh-feed-controls .bi:hover {
+	font-weight: bold;
+  color: var(--bs-success-text-emphasis);
+}
+
+.toast-container {
+	z-index: 9999;
+}
+
+#last-updated {
+  font-size: 0.8rem;
+}
+
+.vh-loading .spinner-border {
+  position: absolute;
+  height: 100px;
+  width: 100px;
+  top: 50%;
+  left: 50%;
+  margin-left: -50px;
+  margin-top: -50px;
+}

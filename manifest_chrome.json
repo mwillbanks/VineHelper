@@ -4,6 +4,8 @@
 	"description": "Improve the Amazon Vine experience.",
 	"version": "2.4.11",
 	"permissions": [
+    "notifications",
+    "sidePanel",
 		"storage"
 	],
 	"icons": {
@@ -16,9 +18,15 @@
 		"default_title": "Amazon Vine Helper",
 		"default_icon": "resource/image/icon-48.png"
 	},
+  "side_panel": {
+    "default_path": "page/sidepanel.html"
+  },
 	"options_ui": {
 		"page": "popup/homepage.html"
 	},
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
 	"web_accessible_resources": [
 		{
 			"resources": [

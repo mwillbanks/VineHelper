@@ -6,7 +6,7 @@ if (typeof browser === "undefined") {
 
 //Extension settings
 var appSettings = {};
-var arrHidden = [];
+var arrHidden = {};
 var arrDebug = [];
 let debugMessage = "";
 

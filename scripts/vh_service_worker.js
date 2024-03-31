@@ -1,16 +1,48 @@
 const DEBUG_MODE = false;
 var appSettings = [];
 var vineCountry = null;
+var vineHelperKeepAlive = null;
+var VH_FEED_DISABLED = false;
+var VH_FEED_INTERVAL = 15000;
+var VH_FEED_TIMEOUT_ID = null;
 
 if (typeof browser === "undefined") {
 	var browser = chrome;
+}
+
+if (typeof chrome !== "undefined") {
+	chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+		if (!tab.url) return;
+
+		const enabled = /http(s)?:\/\/[^.]*.amazon.[^/]*\/vine/i.test(tab.url);
+		await chrome.sidePanel.setOptions({
+			tabId,
+			path: "pages/sidepanel.html",
+			enabled,
+		});
+	});
+
+	chrome.runtime.onInstalled.addListener(() => {
+		chrome?.contextMenus?.create({
+			id: "openSidePanel",
+			title: "Open side panel",
+			contexts: ["all"],
+		});
+	});
+
+	chrome.contextMenus?.onClicked?.addListener((info, tab) => {
+		if (info.menuItemId === "openSidePanel") {
+			chrome.sidePanel.open({ windowId: tab.windowId });
+			isSidePanelOpen = true;
+		}
+	});
 }
 
 //First, we need for the preboot.js file to send us the country of Vine the extension is running onto.
 //Until we have that data, the service worker will standown and retry on the next pass.
 browser.runtime.onMessage.addListener((data, sender, sendResponse) => {
 	if (data.type == "vineCountry") {
-		console.log("Received country from preboot.js: " + data.vineCountry);
+		// console.log("Received country from preboot.js: " + data.vineCountry);
 		vineCountry = data.vineCountry;
 
 		//Passing the country to the Monitor tab
@@ -20,14 +52,20 @@ browser.runtime.onMessage.addListener((data, sender, sendResponse) => {
 		//console.log("Received keep alive.");
 		sendResponse({ success: true });
 	}
+	if (data.type === "feed") {
+		if (data.action === "start") {
+			VH_FEED_DISABLED = false;
+			checkNewItems();
+		} else if (data.action === "stop") {
+			VH_FEED_DISABLED = true;
+		}
+	}
 });
 
 //Load the settings, if no settings, try again in 10 sec
 async function init() {
 	const data = await chrome.storage.local.get("settings");
-
 	if (data == null || Object.keys(data).length === 0) {
-		console.log("Settings not available yet. Waiting 10 sec...");
 		setTimeout(function () {
 			init();
 		}, 10000);
@@ -37,97 +75,87 @@ async function init() {
 	}
 
 	if (appSettings.general.newItemNotification) {
-		console.log("checking for new items...");
 		checkNewItems();
 	}
 }
 
 init();
 
+const decodeHtmlEntities = (str) => str.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
 async function checkNewItems() {
-	//Repeat another check in 60 seconds.
-
-	if (vineCountry == null) {
-		console.log("Country not received from a preboot.js yet. Waiting 10 sec...");
-		setTimeout(function () {
-			checkNewItems();
-		}, 10000);
+	clearTimeout(VH_FEED_TIMEOUT_ID);
+	if (VH_FEED_DISABLED) {
 		return;
 	}
 
-	//Now that we know the country, let's broadcast it to generate traffic and keep thing alive.
-	setInterval(async () => {
-		sendMessageToAllTabs({ type: "vineCountry", domain: vineCountry }, "Vine Country - keep alive");
-	}, 25000);
+	if (vineCountry == null) {
+		VH_FEED_TIMEOUT_ID = setTimeout(checkNewItems, VH_FEED_INTERVAL);
+		return;
+	}
 
-	//Check for new items again in 30 seconds.
-	setTimeout(function () {
-		checkNewItems();
-	}, 60000);
+	if (!vineHelperKeepAlive) {
+		vineHelperKeepAlive = setInterval(async () => {
+			sendMessageToAllTabs({ type: "keepAlive" }, "Keep Alive");
+		}, 25000);
+	}
 
 	if (appSettings == undefined || !appSettings.general.newItemNotification) {
+		VH_FEED_TIMEOUT_ID = setTimeout(checkNewItems, VH_FEED_INTERVAL);
 		return; //Not setup to check for notifications. Will try again in 30 secs.
 	}
 
-	let arrJSON = {
-		api_version: 4,
-		country: vineCountry,
-		orderby: "date",
-		limit: 50,
-	};
-	let jsonArrURL = JSON.stringify(arrJSON);
-
-	//Broadcast a new message to tell the tabs to display a loading wheel.
 	sendMessageToAllTabs({ type: "newItemCheck" }, "Loading wheel");
 
 	//Post an AJAX request to the 3rd party server, passing along the JSON array of all the products on the page
-	let url = "https://vinehelper.ovh/vineHelperLatest.php" + "?data=" + jsonArrURL;
-	fetch(url)
-		.then((response) => response.json())
-		.then(async function (response) {
-			let latestProduct = await browser.storage.local.get("latestProduct");
-			if (Object.keys(latestProduct).length === 0) {
-				latestProduct = 0;
-			} else {
-				latestProduct = latestProduct.latestProduct;
-			}
-
-			for (let i = response.products.length - 1; i >= 0; i--) {
-				//Only display notification for product more recent than the last displayed notification
-				if (DEBUG_MODE || response.products[i].date > latestProduct || latestProduct == 0) {
-					//Only display notification for products with a title and image url
-					if (response.products[i].img_url != "" && response.products[i].title != "") {
-						if (i == 0) {
-							await browser.storage.local.set({
-								latestProduct: response.products[0].date,
-							});
-						}
-
-						let search = response.products[i].title.replace(/^([a-zA-Z0-9\s',]{0,40})[\s]+.*$/, "$1");
-
-						//Broadcast the notification
-						console.log("Broadcasting new item " + response.products[i].asin);
-						sendMessageToAllTabs(
-							{
-								index: i,
-								type: "newItem",
-								domain: vineCountry,
-								date: response.products[i].date,
-								asin: response.products[i].asin,
-								title: response.products[i].title,
-								search: search,
-								img_url: response.products[i].img_url,
-								etv: response.products[i].etv,
-							},
-							"notification"
-						);
-					}
-				}
-			}
-		})
-		.catch(function () {
-			(error) => console.log(error);
+	const url =
+		"https://vinehelper.ovh/vineHelperLatest.php" +
+		"?data=" +
+		JSON.stringify({
+			api_version: 4,
+			country: vineCountry,
+			orderby: "date",
+			limit: 50,
 		});
+	const response = await fetch(url);
+	let { products } = await response.json();
+
+	products = (products || []).reduce((acc, product, i) => {
+		if (!product.img_url) return acc;
+		if (!product.title) return acc;
+
+		product.title = decodeHtmlEntities(product.title);
+
+		if (typeof product.timestamp === "number") {
+			product.date = new Date(product.timestamp * 1000).getTime();
+		} else {
+			const [date, time] = product.date.split(" ");
+			product.date = new Date(date + "T" + time + "Z").getTime();
+		}
+		product.search = product.title.replace(/^([a-zA-Z0-9\s',]{0,40})[\s]+.*$/, "$1");
+		sendMessageToAllTabs(
+			{
+				index: i,
+				type: "newItem",
+				domain: vineCountry,
+				...product,
+			},
+			"notification"
+		);
+		acc.push({
+			...product,
+		});
+		return acc;
+	}, []);
+
+	// Broadcast the item to the vineHelperSidePanel channel
+	chrome.runtime.sendMessage({
+		name: "vinehelperSidePanel",
+		type: "newProducts",
+		domain: vineCountry,
+		products,
+	});
+
+	VH_FEED_TIMEOUT_ID = setTimeout(checkNewItems, VH_FEED_INTERVAL);
 }
 
 async function sendMessageToAllTabs(data, debugInfo) {
@@ -144,7 +172,7 @@ async function sendMessageToAllTabs(data, debugInfo) {
 						return;
 					}
 					if (!response) {
-						console.log("Failed");
+						// console.log("Failed");
 						return;
 					}
 				});
