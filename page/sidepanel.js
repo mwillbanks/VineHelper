@@ -34,15 +34,16 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 };
 
 (async () => {
+	const util = new Util();
+	const toast = new Toast();
+	const vine = new Vine();
+
 	const [VH_SIDE_PANEL_SETTINGS, VH_SETTINGS, VH_HIDDEN_ITEMS, VH_NOTIFICATIONS, VH_PINNED] =
 		await util.getLocalStorage(
 			["vhSidePanel", "settings", "hiddenItems", "notifications", "pinned"],
 			[VH_SIDE_PANEL_SETTINGS_DEFAULT, {}, {}, {}, {}]
 		);
 
-	const toast = new Toast();
-	const util = new Util();
-	const vine = new Vine();
 	const brenda = new Brenda({
 		domain: vine.domain,
 		guid: VH_SETTINGS?.discord?.guid,
@@ -412,6 +413,19 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 	/** Service Worker Listener */
 	const lastUpdatedTime = document.getElementById("last-updated-time");
 	chrome.runtime.onMessage.addListener((msg) => {
+		if (msg.type === "etv") {
+			const asin = msg.data?.asin;
+			const etv = msg.data?.etv;
+			if (!asin || !etv) return;
+
+			console.log("etv", msg.data?.asin, msg.data?.etv);
+			const product = VH_SEEN_PRODUCTS[asin];
+			if (product) {
+				product.etv = etv;
+				renderProducts(VH_SEEN_PRODUCTS, searchText);
+			}
+		}
+
 		if (msg.type == "newItemCheck") {
 			lastUpdatedTime.classList.toggle("d-none", true);
 			loading.classList.toggle("d-none", false);
@@ -419,7 +433,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 		if (msg.type == "newProducts") {
 			loading.classList.toggle("d-none", false);
 			for (const product of msg.products) {
-				if (VH_SEEN_PRODUCTS[product.asin]?.etv === product.etv) {
+				if (VH_SEEN_PRODUCTS[product.asin]?.etv !== null && VH_SEEN_PRODUCTS[product.asin]?.etv !== undefined) {
 					continue;
 				}
 				VH_SEEN_PRODUCTS[product.asin] = {
@@ -614,6 +628,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				});
 				delete VH_SEEN_PRODUCTS[asin];
 			});
+			renderProducts(VH_SEEN_PRODUCTS, searchText);
 		},
 		n: () => {
 			const tabs = document.querySelectorAll("#vh-tabs-nav .nav-link");

@@ -1,4 +1,7 @@
 showRuntime("BOOT: Booterloader starting");
+if (typeof browser === "undefined") {
+	var browser = chrome;
+}
 
 //Create the 2 grids/tabs
 var gridRegular = null;
@@ -650,6 +653,14 @@ window.addEventListener("message", async function (event) {
 			queue: vineQueue,
 			etv: event.data.data.etv,
 		};
+
+		browser.runtime.sendMessage({
+			type: "etv",
+			data: {
+				asin: tileASIN,
+				etv: event.data.data.etv,
+			},
+		});
 
 		const url = "https://vinehelper.ovh/vinehelper.php?data=" + JSON.stringify(arrJSON);
 		await fetch(url); //Await to wait until the vote to have been processed before refreshing the display
