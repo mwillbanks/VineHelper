@@ -24,6 +24,8 @@
 	},
 	"homepage": "https://github.com/FMaz008/VineHelper#readme",
 	"dependencies": {
+		"bootstrap": "5",
+		"bootstrap-icons": "1",
 		"jquery": "^3.7.1",
 		"vine-styling": "github:Thorvarium/vine-styling.git#main"
 	},

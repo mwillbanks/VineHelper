@@ -173,7 +173,7 @@ function initInjectScript() {
 function initSetPageTitle() {
 	//Update the page title
 	let currentUrl = window.location.href;
-	regex = /^.+?amazon\..+\/vine\/.*[\?\&]search=(.*?)(?:[\&].*)?$/;
+	regex = /^.+?amazon\..+\/vine\/.*[?&]search=(.*?)(?:[&].*)?$/;
 	arrMatches = currentUrl.match(regex);
 	if (arrMatches?.length) {
 		$("title").text("Vine - S: " + arrMatches[1]);
@@ -182,7 +182,7 @@ function initSetPageTitle() {
 	}
 
 	//Add the category, is any, that is currently being browsed to the title of the page.
-	regex = /^.+?amazon\..+\/vine\/.*[\?\&]pn=(.*?)(?:[\&]cn=(.*?))?(?:[\&].*)?$/;
+	regex = /^.+?amazon\..+\/vine\/.*[?&]pn=(.*?)(?:[&]cn=(.*?))?(?:[&].*)?$/;
 	arrMatches = currentUrl.match(regex);
 	if (arrMatches?.length === 3) {
 		const selector = arrMatches[2] == undefined ? ".parent-node" : ".child-node";
@@ -491,7 +491,8 @@ async function serverProductsResponse(data) {
 		//If there is a remote value for the hidden item, ensure it is sync'ed up with the local list
 		if (appSettings.hiddenTab.remote == true && values.hidden != null) {
 			showRuntime("DRAW: Remote is ordering to show or hide item");
-			if (values.hidden == true && !tile.isHidden()) tile.hideTile(); //Will update the placement and list
+			if (values.hidden == true && !tile.isHidden())
+				tile.hideTile(); //Will update the placement and list
 			else if (values.hidden == false && tile.isHidden()) tile.showTile(); //Will update the placement and list
 		}
 
@@ -744,37 +745,36 @@ browser.runtime.onMessage.addListener(async (data, sender, sendResponse) => {
 
 	if (data.type == "newItem") {
 		sendResponse({ success: true });
+		// if (
+		// 	data.index < 10 && //Limit the notification to the top 10 most recents
+		// 	vineBrowsingListing && //Only show notification on listing pages
+		// 	appSettings.general.displayNewItemNotifications
+		// ) {
+		// 	console.log("New notification!");
+		// 	let { date, asin, title, search, img_url, domain, etv } = data;
 
-		if (
-			data.index < 10 && //Limit the notification to the top 10 most recents
-			vineBrowsingListing && //Only show notification on listing pages
-			appSettings.general.displayNewItemNotifications
-		) {
-			console.log("New notification!");
-			let { date, asin, title, search, img_url, domain, etv } = data;
+		// 	//Generate the content to be displayed in the notification
+		// 	const prom = await Tpl.loadFile("/view/notification_new_item.html");
 
-			//Generate the content to be displayed in the notification
-			const prom = await Tpl.loadFile("/view/notification_new_item.html");
+		// 	Tpl.setIf("show_image", appSettings.general.newItemNotificationImage);
+		// 	Tpl.setVar("date", date);
+		// 	Tpl.setVar("search", search);
+		// 	Tpl.setVar("asin", asin);
+		// 	Tpl.setVar("description", title);
+		// 	Tpl.setVar("img_url", img_url);
 
-			Tpl.setIf("show_image", appSettings.general.newItemNotificationImage);
-			Tpl.setVar("date", date);
-			Tpl.setVar("search", search);
-			Tpl.setVar("asin", asin);
-			Tpl.setVar("description", title);
-			Tpl.setVar("img_url", img_url);
+		// 	//Generate the notification
+		// 	let note2 = new ScreenNotification();
+		// 	note2.title = "New item detected !";
+		// 	note2.lifespan = 60;
 
-			//Generate the notification
-			let note2 = new ScreenNotification();
-			note2.title = "New item detected !";
-			note2.lifespan = 60;
-
-			//Play the notification sound
-			if (appSettings.general.newItemNotificationSound) {
-				note2.sound = "resource/sound/notification.mp3";
-			}
-			note2.content = Tpl.render(prom);
-			Notifications.pushNotification(note2);
-		}
+		// 	//Play the notification sound
+		// 	if (appSettings.general.newItemNotificationSound) {
+		// 		note2.sound = "resource/sound/notification.mp3";
+		// 	}
+		// 	note2.content = Tpl.render(prom);
+		// 	Notifications.pushNotification(note2);
+		// }
 	}
 	if (data.type == "vineCountry") {
 		sendResponse({ success: true });

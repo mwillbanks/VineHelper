@@ -6,7 +6,7 @@ if (typeof browser === "undefined") {
 
 //Extension settings
 var appSettings = {};
-var arrHidden = [];
+var arrHidden = {};
 var arrDebug = [];
 let debugMessage = "";
 
@@ -217,7 +217,7 @@ async function getSettings() {
 	//Figure out what domain the extension is working on
 	//De-activate the unavailableTab (and the voting system) for all non-.ca domains.
 	let currentUrl = window.location.href;
-	regex = /^.+?amazon\.([a-z\.]+).*\/vine\/.*$/;
+	regex = /^.+?amazon\.([a-z.]+).*\/vine\/.*$/;
 	arrMatches = currentUrl.match(regex);
 	vineDomain = arrMatches[1];
 	vineCountry = vineDomain.split(".").pop();

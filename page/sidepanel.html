@@ -1,0 +1,158 @@
+<!doctype html>
+<html data-bs-theme="light">
+	<head>
+		<title>Amazon Vine Helper Side Panel</title>
+		<link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css" />
+		<link rel="stylesheet" href="sidepanel.css" />
+    <style type="text/css" id="vh-panel-style"></style>
+	</head>
+	<body>
+		<div class="vh-loading">
+			<div class="spinner-border text-primary" role="status">
+				<span class="visually-hidden">Loading...</span>
+			</div>
+		</div>
+		<div class="vh-loaded d-none">
+			<nav class="navbar bg-body-tertiary">
+				<div class="container-fluid">
+					<a class="navbar-brand">
+						<img
+							src="../resource/image/icon-32.png"
+							alt="Logo"
+							width="32"
+							height="32"
+							class="d-inline-block align-text-top"
+						/>
+						Vine Helper
+					</a>
+					<div class="d-flex flex-column">
+						<div class="input-group input-group-sm">
+							<input
+								class="form-control"
+								id="search-input"
+								type="search"
+								placeholder="Search"
+								aria-label="Search"
+							/>
+							<button class="btn btn-outline-success btn-sm" id="search-btn" type="submit">
+								<i class="bi bi-search"></i>
+							</button>
+						</div>
+						<small class="text-body-secondary" id="last-updated" role="status">
+							Last Update: <span id="last-updated-time"></span>
+							<div
+								class="spinner-border spinner-border-sm"
+								id="last-updated-loader"
+								aria-hidden="true"
+								class="d-none"
+							></div>
+						</small>
+						<small class="text-body-secondary vh-feed-controls" role="status">
+							<small>Feed Status:</small>
+							<small class="vh-feed-paused d-none"
+								>Paused <i class="bi bi-play-btn btn" data-action="start"></i
+							></small>
+							<small class="vh-feed-active"
+								>Active <i class="bi bi-pause-btn btn" data-action="stop"></i
+							></small>
+						</small>
+					</div>
+				</div>
+			</nav>
+			<div class="d-flex justify-content-between">
+				<ul class="nav nav-tabs" id="vh-tabs-nav" role="tablist"></ul>
+				<i class="bi bi-gear-fill btn" data-bs-toggle="modal" data-bs-target="#vh-settings"></i>
+			</div>
+
+			<div class="tab-content" id="vh-tabs-content"></div>
+
+			<div class="modal fade" id="vh-settings" tabindex="-1" aria-labelledby="settingsLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="settingsLabel">Settings</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="dynamic-settings"></div>
+							<strong>Tabs</strong>
+							<div class="vh-input-settings-tab-container"></div>
+							<i class="vh-input-settings-tab-add btn btn-lg text-success bi bi-plus-circle"></i>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-primary" id="save-settings">Save</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="toast-container" class="position-fixed top-0 end-0 p-1"></div>
+		<template id="productTemplate">
+			<div class="col">
+				<div class="card">
+					<div class="card-header" data-bs-toggle="tooltip" data-bs-placement="top"></div>
+					<img class="card-img-top img-thumbnail" />
+					<div class="card-footer">
+						<div class="d-flex justify-content-between">
+							<small><i class="bi bi-clock-history"></i> <span class="time-ago"></span></small>
+							<span class="etv d-none"
+								><i class="bi bi-currency-exchange"></i> <span class="etv-value"></span
+							></span>
+						</div>
+						<div class="btn-group btn-group-sm" role="group" aria-label="Product Links">
+							<i class="bi bi-search btn btn-primary"></i>
+							<i class="bi bi-pin-angle-fill btn btn-primary"></i>
+							<i class="bi bi-pin btn btn-primary"></i>
+							<i class="bi bi-eye-slash-fill btn btn-primary"></i>
+							<i class="bi bi-link-45deg btn btn-primary"></i>
+							<i class="bi bi-megaphone btn btn-primary"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+		</template>
+		<template id="templateToastMessage">
+			<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="toast-header">
+					<strong class="me-auto"></strong>
+					<small class="text-body-secondary"></small>
+					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+				<div class="toast-body"></div>
+			</div>
+		</template>
+		<template id="templateTabItem">
+			<li class="nav-item" role="presentation">
+				<a class="nav-link position-relative" data-bs-toggle="tab" role="tab" aria-selected="false"
+					><span class="nav-title"></span> <span class="badge text-bg-success top-0 position-absolute">0</span></a
+				>
+			</li>
+		</template>
+		<template id="templateTabContent">
+			<div class="tab-pane fade show" id="tab-all-content" role="tabpanel" aria-labelledby="tab-all-nav">
+				<div class="row vh-products"></div>
+			</div>
+		</template>
+		<template id="templateSettingsTabInput">
+			<div class="vh-input-settings-tab input-group input-group-sm">
+				<i class="btn btn-sm bi bi-trash text-danger"></i>
+				<input type="text" class="form-control" placeholder="Name" name="tabs.ID.name" />
+				<input type="text" class="form-control" placeholder="Criteria" name="tabs.ID.search" />
+				<input type="checkbox" class="btn-check" name="tabs.ID.isRegex" id="tabs.ID.isRegex" />
+				<label class="btn bi bi-regex" for="tabs.ID.isRegex"></label>
+				<input type="checkbox" class="btn-check" name="tabs.ID.isZeroEtv" id="tabs.ID.isZeroEtv" />
+				<label class="btn bi bi-0-circle" for="tabs.ID.isZeroEtv"></label>
+				<input type="checkbox" class="btn-check" name="tabs.ID.notify" id="tabs.ID.notify" />
+				<label class="btn bi bi-megaphone" for="tabs.ID.notify"></label>
+			</div>
+		</template>
+	</body>
+	<script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../scripts/toast.js"></script>
+  <script src="../scripts/util.js"></script>
+  <script src="../scripts/vine.js"></script>
+	<script src="sidepanel.js"></script>
+</html>
+
