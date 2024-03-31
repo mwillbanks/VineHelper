@@ -650,6 +650,10 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 		},
 	};
 	document.addEventListener("keydown", (event) => {
+		if (["input", "textarea"].includes(event.target.tagName.toLowerCase())) {
+			return;
+		}
+
 		if (keyMap[event.key]) {
 			keyMap[event.key]();
 		}
