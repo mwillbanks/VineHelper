@@ -376,8 +376,24 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 			container.appendChild(fragment);
 			document.getElementById(`tab-${tabId}-nav`).querySelector(".badge").textContent = productCount;
 		}
-		// tooltips are buggy, sometimes they'll pop open but you can't dismiss them.
-		document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => new window.bootstrap.Tooltip(el));
+
+		document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+			// sometimes the tooltip becomes stuck open, by setting a timeout, we can simply force it to close to prevent issues.
+			const tooltip = new window.bootstrap.Tooltip(el);
+			let timeout = null;
+
+			el.addEventListener("shown.bs.tooltip", () => {
+				timeout = setTimeout(() => {
+					tooltip.hide();
+				}, 5000);
+			});
+
+			el.addEventListener("hidden.bs.tooltip", () => {
+				if (timeout) {
+					clearTimeout(timeout);
+				}
+			});
+		});
 	};
 
 	/** Search */
@@ -648,7 +664,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				tabs[prevTab].click();
 			}
 		},
-		13: {
+		Enter: {
 			handler: (event) => {
 				if (event.target.tagName.toLowerCase() === "input" && event.target.id === "search-input") {
 					document.getElementById("search-btn").click();
@@ -663,8 +679,10 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 		if (keyMap[event.key]) {
 			handler = keyMap[event.key];
 		} else if (keyMap[event.code]) {
-			handler = keyMap[event.code]();
+			handler = keyMap[event.code];
 		}
+
+		console.log({ handler, key: event.key, code: event.code, target: event.target.tagName.toLowerCase() });
 
 		if (!handler) {
 			return;
