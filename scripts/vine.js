@@ -1,33 +1,45 @@
 const vineCountryMap = {
 	CA: {
-		url: "https://www.amazon.ca",
-		currency: "CAD",
 		code: "CA",
+		currency: "CAD",
+		url: "https://www.amazon.ca",
+		domain: "amazon.ca",
 	},
-	EU: {
-		url: "https://www.amazon.de",
-		currency: "EUR",
+	DE: {
 		code: "DE",
+		currency: "EUR",
+		domain: "amazon.de",
+		url: "https://www.amazon.de",
+	},
+	ES: {
+		code: "ES",
+		currency: "EUR",
+		url: "https://www.amazon.es",
+		domain: "amazon.es",
 	},
 	FR: {
-		url: "https://www.amazon.fr",
-		currency: "EUR",
 		code: "FR",
+		currency: "EUR",
+		url: "https://www.amazon.fr",
+		domain: "amazon.fr",
 	},
 	GB: {
-		url: "https://www.amazon.co.uk",
-		currency: "GBP",
 		code: "GB",
+		currency: "GBP",
+		url: "https://www.amazon.co.uk",
+		domain: "amazon.co.uk",
 	},
 	JP: {
-		url: "https://www.amazon.co.jp",
-		currency: "JPY",
 		code: "JP",
+		currency: "JPY",
+		url: "https://www.amazon.co.jp",
+		domain: "amazon.co.jp",
 	},
 	US: {
-		url: "https://www.amazon.com",
-		currency: "USD",
 		code: "US",
+		currency: "USD",
+		url: "https://www.amazon.com",
+		domain: "amazon.com",
 	},
 };
 
@@ -48,11 +60,11 @@ class Vine {
 		return this.currencyFormatter.format(amount);
 	}
 
-	formatTimeAgo(dateString) {
-		return Math.floor((new Date() - new Date(dateString)) / (1000 * 60)) + "m";
-	}
-
 	formatDate(dateString) {
 		return new Date(dateString).toLocaleString(this.language);
+	}
+
+	formatTimeAgo(dateString) {
+		return Math.floor((new Date() - new Date(dateString)) / (1000 * 60)) + "m";
 	}
 }

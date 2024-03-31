@@ -1,8 +1,4 @@
 /* eslint-disable no-console */
-const toast = new Toast();
-const util = new Util();
-const vine = new Vine();
-
 const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 	feed: {
 		title: "Feed Configuration",
@@ -38,18 +34,28 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 };
 
 (async () => {
-	const [VH_SIDE_PANEL_SETTINGS, VH_SETTINGS, VH_HIDDEN_ITEMS, VH_NOTIFICATIONS] = await util.getLocalStorage(
-		["vhSidePanel", "settings", "hiddenItems", "notifications"],
-		[VH_SIDE_PANEL_SETTINGS_DEFAULT, {}, {}, {}]
-	);
-	console.log("VH_NOTIFICATIONS", VH_NOTIFICATIONS);
+	const [VH_SIDE_PANEL_SETTINGS, VH_SETTINGS, VH_HIDDEN_ITEMS, VH_NOTIFICATIONS, VH_PINNED] =
+		await util.getLocalStorage(
+			["vhSidePanel", "settings", "hiddenItems", "notifications", "pinned"],
+			[VH_SIDE_PANEL_SETTINGS_DEFAULT, {}, {}, {}, {}]
+		);
+
+	const toast = new Toast();
+	const util = new Util();
+	const vine = new Vine();
+	const brenda = new Brenda({
+		domain: vine.domain,
+		guid: VH_SETTINGS?.discord?.guid,
+		toast,
+	});
+
 	const VH_SEEN_PRODUCTS = {};
 	const VH_TAB_PRODUCTS = {};
 
-	const VH_BROADCAST_CHANNEL = new BroadcastChannel("vine_helper");
-	VH_BROADCAST_CHANNEL.onmessage = (ev) => {
-		console.log("Broadcast received:", ev.data);
-	};
+	/** restore pinned to seen products */
+	for (const asin in VH_PINNED) {
+		VH_SEEN_PRODUCTS[asin] = VH_PINNED[asin];
+	}
 
 	chrome.storage.onChanged.addListener((changes, namespace) => {
 		for (let [key, { newValue }] of Object.entries(changes)) {
@@ -75,7 +81,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 	setInterval(() => {
 		let expiration = Date.now() - 1000 * 60 * VH_SIDE_PANEL_SETTINGS.feed.options.expire.value;
 		for (const asin in VH_SEEN_PRODUCTS) {
-			if (VH_SEEN_PRODUCTS[asin].pinned) {
+			if (VH_PINNED[asin]) {
 				continue;
 			}
 			if (VH_SEEN_PRODUCTS[asin].date < expiration) {
@@ -91,7 +97,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 			}
 		}
 
-		chrome.storage.local.set({ hiddenItems: VH_HIDDEN_ITEMS, notifications: VH_NOTIFICATIONS });
+		chrome.storage.local.set({ hiddenItems: VH_HIDDEN_ITEMS, notifications: VH_NOTIFICATIONS, pinned: VH_PINNED });
 	}, 1000 * 60);
 
 	/** Notification Event Handlers */
@@ -126,17 +132,21 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				window.open(`${vine.url}/dp/${asin}`, "_blank");
 				break;
 			case "announce":
-				chrome.runtime.sendMessage({ type: "announce", product: VH_SEEN_PRODUCTS[asin] });
+				event.target.remove();
+				VH_SEEN_PRODUCTS[asin].announced = true;
+				brenda.announce(asin, VH_SEEN_PRODUCTS[asin].etv, VH_SEEN_PRODUCTS[asin].queue);
 				break;
 			case "pin":
-				VH_SEEN_PRODUCTS[asin].pinned = true;
+				VH_PINNED[asin] = VH_SEEN_PRODUCTS[asin];
 				renderProducts(VH_SEEN_PRODUCTS, searchText);
 				break;
 			case "unpin":
-				VH_SEEN_PRODUCTS[asin].pinned = false;
+				delete VH_PINNED?.[asin];
 				renderProducts(VH_SEEN_PRODUCTS, searchText);
 				break;
 			case "hide":
+				event.target.closest(".card").remove();
+				delete VH_PINNED?.[asin];
 				delete VH_SEEN_PRODUCTS?.[asin];
 				VH_HIDDEN_ITEMS[asin] = Date.now();
 				renderProducts(VH_SEEN_PRODUCTS, searchText);
@@ -217,9 +227,9 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 			searchProducts = searchProducts.filter((product) => product.title.toLowerCase().includes(searchText));
 		}
 		searchProducts = searchProducts.sort((a, b) => {
-			if (!a.pinned && b.pinned) {
+			if (!VH_PINNED[a.asin] && VH_PINNED[b.asin]) {
 				return 1;
-			} else if (a.pinned && !b.pinned) {
+			} else if (VH_PINNED[a.asin] && !VH_PINNED[b.asin]) {
 				return -1;
 			}
 			return b.date - a.date;
@@ -292,12 +302,12 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				actions[0].dataset.search = encodeURIComponent(product.search);
 				actions[1].dataset.action = "pin";
 				actions[1].dataset.asin = product.asin;
-				if (product.pinned) {
+				if (VH_PINNED[product.asin]) {
 					actions[1].classList.add("d-none");
 				}
 				actions[2].dataset.action = "unpin";
 				actions[2].dataset.asin = product.asin;
-				if (!product.pinned) {
+				if (!VH_PINNED[product.asin]) {
 					actions[2].classList.add("d-none");
 				}
 				actions[3].dataset.action = "hide";
@@ -306,7 +316,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 				actions[4].dataset.asin = product.asin;
 				actions[5].dataset.action = "announce";
 				actions[5].dataset.asin = product.asin;
-				if (product.etv === null) {
+				if (product.etv === null || product.announced) {
 					actions[5].classList.add("d-none");
 				}
 				actions.forEach((action) => action.addEventListener("click", productActionHandler));
@@ -592,7 +602,7 @@ const VH_SIDE_PANEL_SETTINGS_DEFAULT = {
 		h: () => {
 			const tabId = document.querySelector("#vh-tabs-nav .nav-link.active").dataset.id;
 			Array.from(VH_TAB_PRODUCTS?.[tabId] || []).forEach((asin) => {
-				if (VH_SEEN_PRODUCTS[asin].pinned) return;
+				if (VH_PINNED[asin]) return;
 
 				VH_HIDDEN_ITEMS[asin] = Date.now();
 				document.querySelectorAll("#vh-tabs-nav .nav-link").forEach((tab) => {

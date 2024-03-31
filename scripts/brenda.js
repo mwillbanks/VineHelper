@@ -1,5 +1,5 @@
-class BrendaAnnounceQueue {
-	constructor({ guid, vineDomain }) {
+class Brenda {
+	constructor({ domain, guid, toast }) {
 		this.DEFAULT_RATE_LIMIT_SECS = 10;
 		this.RESPONSE_STATUS_TMPL = {
 			200: "{asin} has been successfully announced to Brenda.",
@@ -17,12 +17,13 @@ class BrendaAnnounceQueue {
 		this.rateLimitSecs = this.DEFAULT_RATE_LIMIT_SECS;
 		this.guid = guid;
 		this.queue = [];
-		this.vineDomain = vineDomain;
+		this.domain = domain;
+		this.toast = toast;
 	}
 
 	async announce(asin, etv, queue) {
 		if (this.queue.length >= this.MAX_QUEUE_LENGTH) {
-			window.Toast.show({
+			this.toast.show({
 				title: "Brenda Announcement",
 				message: "The queue is full, not everything should be shared. Please be selective.",
 			});
@@ -58,7 +59,7 @@ class BrendaAnnounceQueue {
 				body: new URLSearchParams({
 					version: 1,
 					token: this.guid,
-					domain: "amazon." + this.vineDomain,
+					domain: this.domain,
 					tab: item.queue,
 					asin: item.asin,
 					etv: item.etv,
@@ -84,10 +85,6 @@ class BrendaAnnounceQueue {
 
 		// Replace placeholders in the message
 		message = message.replace("{asin}", item.asin);
-		window.Toast.show({ title: "Brenda Announcement", message });
+		this.toast.show({ title: "Brenda Announcement", message });
 	}
-}
-
-if (typeof window.BrendaAnnounceQueue === "undefined") {
-	window.BrendaAnnounceQueue = new BrendaAnnounceQueue();
 }

@@ -11,7 +11,7 @@ class Util {
 
 		const data = await chrome.storage.local.get(key);
 
-		return util.deepMerge(existing, data[key] || {});
+		return this.deepMerge(existing, data[key] || {});
 	}
 
 	getType(obj) {
