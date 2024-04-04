@@ -1,13 +1,71 @@
-const DEBUG_MODE = false;
+import { io } from "socket.io-client";
+import { Logger } from "./logger";
+
+const logger = new Logger("vh", { settings: { minLevel: "silly" } });
+
+/** not yet refactored... */
 var appSettings = [];
 var vineCountry = null;
 var vineHelperKeepAlive = null;
 var VH_FEED_DISABLED = false;
 var VH_FEED_INTERVAL = 15000;
 var VH_FEED_TIMEOUT_ID = null;
+var VH_SOCKET_URL = "http://localhost:3000";
 
-if (typeof browser === "undefined") {
-	var browser = chrome;
+class VHServiceWorker {
+	constructor() {
+		this.browser = typeof browser !== "undefined" ? browser : chrome;
+		this.logger = logger.scope("serviceWorker");
+
+		this.socketLogger = this.logger.scope("socket");
+		this.socket = null;
+
+		this.init();
+	}
+
+	async init() {
+		this.socket = io(VH_SOCKET_URL);
+		this.socket.on("connect", () => {
+			socketLogger.info("Connected to the server.");
+		});
+		this.socket.on("connect_error", (error) => {
+			socketLogger.error(`Failed to connect to the server: ${error.message}`);
+		});
+		this.socket.on("ping", () => {
+			socketLogger.info("Received ping from the server.");
+			this.socket.emit("pong");
+		});
+		this.socket.on("reconnect", (attempt) => {
+			socketLogger.warn(`Reconnected to the server after ${attempt} attempts.`);
+		});
+		socket.io.on("reconnect_attempt", (attempt) => {
+			socketLogger.warn(`Reconnecting to the server, attempt ${attempt}.`);
+		});
+		socket.io.on("reconnect_error", (error) => {
+			socketLogger.error(`Failed to reconnect to the server: ${error.message}`);
+		});
+		socket.io.on("reconnect_failed", () => {
+			socketLogger.error("Failed to reconnect to the server.");
+		});
+		socket.io.on("error", (error) => {
+			socketLogger.error(`An error occurred: ${error.message}`);
+		});
+		this.socket.on("disconnect", () => {
+			socketLogger.warn("Disconnected from the server.");
+		});
+	}
+
+	async browserTabUpdated(tabId, changeInfo, tab) {
+		this.logger.info("Tab updated", { tabId, changeInfo, tab });
+		if (!tab.url) return;
+
+		const enabled = /http(s)?:\/\/[^.]*.amazon.[^/]*\/vine/i.test(tab.url);
+		await this.browser.sidePanel.setOptions({
+			tabId,
+			path: "pages/sidepanel.html",
+			enabled,
+		});
+	}
 }
 
 if (typeof chrome !== "undefined") {
@@ -126,10 +184,11 @@ async function checkNewItems() {
 		product.title = decodeHtmlEntities(product.title);
 
 		if (typeof product.timestamp === "number") {
-			product.date = new Date(product.timestamp * 1000).getTime();
+			product.timestamp = product.timestamp * 1000;
 		} else {
 			const [date, time] = product.date.split(" ");
-			product.date = new Date(date + "T" + time + "Z").getTime();
+			product.timestamp = new Date(date + "T" + time + "Z").getTime();
+			delete product.date;
 		}
 		product.search = product.title.replace(/^([a-zA-Z0-9\s',]{0,40})[\s]+.*$/, "$1");
 		sendMessageToAllTabs(

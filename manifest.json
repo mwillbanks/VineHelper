@@ -3,12 +3,9 @@
 	"name": "Amazon Vine Helper",
 	"description": "Improve the Amazon Vine experience.",
 	"version": "2.4.11",
-	"permissions": [
-    "notifications",
-    "sidePanel",
-		"storage"
-	],
-	"browser_specific_settings": {
+	"{{chrome}}.permissions": ["notifications", "sidePanel", "storage"],
+	"{{firefox}}.permissions": ["notifications", "sidePanel", "storage"],
+	"{{firefox}}.browser_specific_settings": {
 		"gecko": {
 			"id": "{5951bf9a-25ae-4043-9fa2-54dc0ac1ce70}",
 			"strict_min_version": "109.0"
@@ -24,9 +21,20 @@
 		"default_title": "Amazon Vine Helper",
 		"default_icon": "resource/image/icon-48.png"
 	},
-  "side_panel": {
-    "default_path": "page/sidepanel.html"
-  },
+	"{{chrome}}.side_panel": {
+		"default_path": "page/sidepanel.html"
+
+	},
+	"{{firefox}}.sidebar_action": {
+		"default_panel": "page/sidepanel.html",
+		"default_title": "Amazon Vine Helper",
+		"default_icon": {
+			"16": "resource/image/icon-16.png",
+			"32": "resource/image/icon-32.png",
+			"48": "resource/image/icon-48.png"
+		},
+		"open_at_install": false
+	},
 	"options_ui": {
 		"page": "popup/homepage.html"
 	},
@@ -40,9 +48,9 @@
 				"page/*",
 				"node_modules/vine-styling/desktop/*",
 				"node_modules/vine-styling/mobile/*",
-        "node_modules/debug/src/browser.js",
-        "node_modules/bootstrap/dist/*",
-        "node_modules/bootstrap-icons/*",
+				"node_modules/debug/src/browser.js",
+				"node_modules/bootstrap/dist/*",
+				"node_modules/bootstrap-icons/*",
 				"scripts/inj.js"
 			],
 			"matches": [
@@ -57,14 +65,13 @@
 		}
 	],
 	"background": {
-		"service_worker": "scripts/vh_service_worker.js",
-		"scripts": [
-			"scripts/vh_service_worker.js"
-		]
+		"{{chrome}}.service_worker": "scripts/vh_service_worker.js",
+		"{{firefox}}.scripts": ["scripts/vh_service_worker.js"],
+		"type": "module"
 	},
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
-  },
+	"content_security_policy": {
+		"extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+	},
 	"content_scripts": [
 		{
 			"css": [
@@ -76,12 +83,7 @@
 				"resource/css/toolbar.css",
 				"resource/css/vinehelper.css"
 			],
-			"js": [
-				"scripts/grid.js",
-				"scripts/tile.js",
-				"scripts/toolbar.js",
-				"scripts/bootloader.js"
-			],
+			"js": ["scripts/grid.js", "scripts/tile.js", "scripts/toolbar.js", "scripts/bootloader.js"],
 			"matches": [
 				"*://*.amazon.ca/vine/*",
 				"*://*.amazon.de/vine/*",
@@ -116,14 +118,8 @@
 			"run_at": "document_start"
 		},
 		{
-			"css": [
-				"resource/css/vinehelper.css",
-				"resource/css/main.css"
-			],
-			"js": [
-				"scripts/Template.js",
-				"scripts/review.js"
-			],
+			"css": ["resource/css/vinehelper.css", "resource/css/main.css"],
+			"js": ["scripts/Template.js", "scripts/review.js"],
 			"matches": [
 				"*://*.amazon.ca/review/create-review*",
 				"*://*.amazon.de/review/create-review*",
@@ -138,3 +134,4 @@
 		}
 	]
 }
+
