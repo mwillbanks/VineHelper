@@ -25,6 +25,16 @@ export class Util {
 	}
 
 	/**
+	 * Decode HTML entities in a string.
+	 * 
+	 * @param str - The string to decode HTML entities in.
+	 * @returns The string with decoded HTML entities.
+	 */
+	decodeHtmlEntities(str: string) {
+		return str.replace(/&#(\d+);/g, (_match, dec) => String.fromCharCode(dec));
+	}
+
+	/**
 	 * Get the value of a key from local storage.
 	 * 
 	 * @param key - The key to get the value of.

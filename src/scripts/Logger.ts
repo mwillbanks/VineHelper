@@ -3,6 +3,7 @@ import { Logger as TSLog, ILogObj, ISettingsParam } from "tslog";
 export class Logger extends TSLog<ILogObj> {
   constructor(scope = "vh", settings: ISettingsParam<ILogObj> = {}) {
     settings.name = scope;
+    settings.minLevel = settings.minLevel || 0;
 
     super(settings);
   }
