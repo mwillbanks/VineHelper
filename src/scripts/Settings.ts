@@ -158,6 +158,7 @@ export type TypeGlobalSettings = {
     guid: string | null;
   };
   thorvarium: {
+    darktheme: boolean;
     mobileios: boolean;
     mobileandroid: boolean;
     smallItems: boolean;
