@@ -1,5 +1,6 @@
 export enum Constants {
   BASE_URL = 'https://vinehelper.ovh',
+  WSS_URL = 'https://wss.vinehelper.ovh',
   API_VERSION = 4,
   CONSENSUS_FEES = 0,
   CONSENSUS_NO_FEES = 1,

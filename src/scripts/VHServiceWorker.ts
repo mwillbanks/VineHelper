@@ -1,20 +1,42 @@
-import browser from "webextension-polyfill";
-import { Vine } from "./Vine";
-import { Logger } from "./Logger";
-import { Api } from "./Api";
-import { GlobalSettings, SettingsFactory, TypeGlobalSettings } from "./Settings";
+import browser from "webextension-polyfill"; // Cross-Browser Compatibility
+import { Socket, io } from "socket.io-client"; // Websockets
+import { Vine } from "./Vine"; // Vine API & Attributes
+import { Logger } from "./Logger"; // Logging
+import { Api } from "./Api"; // VineHelper Server API
+import { GlobalSettings, SettingsFactory, TypeGlobalSettings } from "./Settings"; // Settings
+import { Constants } from "./Constants"; // Constants
 
+/**
+ * Vine Helper Service Worker
+ * 
+ * This class is responsible for managing the Vine Helper service worker. It initializes the service worker
+ * and sets up the broadcast channel, feed, log, settings, vine, websocket and various listeners. This class
+ * is the main interaction for communicating with APIs and ensuring inner-app communication.
+ */
 class VHServiceWorker {
+
 	protected api: Api;
-	protected broadcastChannel: BroadcastChannel = new BroadcastChannel("vh");
-	protected feedIsEnabled: boolean = true;
-	protected feedIsRunning: boolean = false;
-	protected feedInterval: number = 30000;
-	protected feedTimeoutId?: NodeJS.Timeout;
 	protected log: Logger;
 	protected settings: TypeGlobalSettings = {} as TypeGlobalSettings;
 	protected vine: Vine;
+	protected websocket!: Socket // We force unwrap the check (!) as we initialize this through a method in the constructor
 
+	/**
+	 * The broadcast channel.
+	 * 
+	 * This channel is used to communicate between the service worker and the content script.
+	 */
+	protected broadcastChannel: BroadcastChannel = new BroadcastChannel("vh");
+	/**
+	 * If the product feed for the side panel is enabled.
+	 */
+	protected feedIsEnabled: boolean = true;
+
+	/**
+	 * Constructor
+	 * 
+	 * This method initializes the class and sets the log, vine, and api attributes. It also initializes the service worker.
+	 */
 	constructor() {
 		this.log = new Logger().scope("VHServiceWorker");
 		this.vine = new Vine();
@@ -22,6 +44,11 @@ class VHServiceWorker {
 		this.init();
 	}
 
+	/**
+	 * Initialize
+	 * 
+	 * This method initializes the service worker and sets up the broadcast channel, log, settings, vine and websocket.
+	 */
 	protected async init() {
 		this.log.info("Initializing VHServiceWorker...");
 
@@ -36,68 +63,93 @@ class VHServiceWorker {
 				settings: this.settings,
 			});
 		});
-		this.initSidePanelListeners();
 		this.initMessageListeners();
+		this.initWebsocket();
 
 		this.log.info("VHServiceWorker initialized.");
 	}
 
-	protected initSidePanelListeners() {
-		browser.tabs.onUpdated.addListener(async (tabId, _info, tab) => {
-			if (!tab.url) return;
-	
-			browser.sidebarAction
-			await browser.sidebarAction.setPanel({
-				tabId,
-				panel: "pages/sidepanel.html",
-			});
-		});
-	
-		browser.runtime.onInstalled.addListener(() => {
-			browser.contextMenus.create({
-				id: "openSidePanel",
-				title: "Open side panel",
-				contexts: ["all"],
-			});
-		});
-	
-		browser.contextMenus?.onClicked?.addListener((info) => {
-			if (info.menuItemId === "openSidePanel") {
-				browser.sidebarAction.open();
-			}
-		});
-	}
-
+	/**
+	 * Initialize message listeners
+	 */
 	protected initMessageListeners() {
 		browser.runtime.onMessage.addListener(async (message, _sender, _sendResponse) => {
+			const log = this.log.scope("messageListener");
+			log.debug("Received message:", message);
+
 			if (message.type === "keepAlive") {
+				log.debug("Received keep alive message.");
 				return { success: true };
 			}
 			if (message.type === "feed") {
 				if (message.action === "start") {
-					return this.feedIsEnabled = true;
+					log.debug("Starting feed.");
+					return { success: true };
 				}
 				if (message.action === "stop") {
-					return this.feedIsEnabled = false;
+					log.debug("Stopping feed.");
+					return { success: true };
 				}
+			}
+			if (message.type === "infiniteWheelFixed") {
+				log.debug("Infinite wheel fixed.");
+				return { success: true };
+			}
+			if (message.type === "etv") {
+				log.debug("ETV reported.");
+				return { success: true };
+			}
+			if (message.type === "error") {
+				log.error("Error reported:", message.data.error);
+				return { success: true };
+			}
+			if (message.type === "order") {
+				log.debug("Order reported.");
+				return { success: true };
 			}
 		});
 	}
 
-	protected async pollFeed() {
-		if (!this.feedIsEnabled || this.feedIsRunning) {
-			return;
-		}
-		this.feedIsRunning = true;
-		clearTimeout(this.feedTimeoutId);
-
-		const products = await this.api.feed({ orderby: "date", limit: 50 });
-		this.broadcastChannel.postMessage({
-			type: "feed",
-			products,
+	/**
+	 * Initialize websocket
+	 */
+	protected initWebsocket() {
+		this.websocket = io(Constants.WSS_URL, {
+			autoConnect: false,
+			reconnection: true,
+			auth: {
+				token: [this.settings.general.uuid, this.vine.queue].join("|"),
+			},
 		});
-		
-		this.feedTimeoutId = setTimeout(() => this.pollFeed(), this.feedInterval);
+
+		this.websocket.on("connect", () => {
+			this.log.info("Connected to websocket.");
+		});
+
+		this.websocket.on("disconnect", () => {
+			this.log.info("Disconnected from websocket.");
+		});
+
+		this.websocket.on("error", (error) => {
+			this.log.error("Websocket error:", error);
+		});
+
+		this.websocket.on("product", async (data) => {
+			this.log.debug("Received product data:", data);
+
+			if (!this.feedIsEnabled) {
+				this.log.debug("Feed is disabled, ignoring data.");
+				return;
+			}
+
+			// Send data to content script
+			this.broadcastChannel.postMessage({
+				type: "feed",
+				data: data,
+			});
+		});
+
+		this.websocket.connect();
 	}
 }
 

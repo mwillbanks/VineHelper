@@ -122,6 +122,11 @@ export class Vine {
 	url: string;
 
 	/**
+	 * The queue.
+	 */
+	queue: string;
+
+	/**
 	 * @constructor
 	 */
 	constructor() {
@@ -139,6 +144,7 @@ export class Vine {
 		});
 		this.domain = vineCountryMap[this.country].domain;
 		this.url = vineCountryMap[this.country].url;
+		this.queue = this.url.split(".").pop() as string;
 	}
 
 	/**
@@ -147,7 +153,7 @@ export class Vine {
 	 * @param {number|string} amount - The amount to format.
 	 * @returns {string} The formatted currency amount.
 	 */
-	formatCurrency(amount: number | string) {
+	formatCurrency(amount: number | string): string {
 		if (typeof amount === "string") {
 			amount = parseFloat(amount);
 		}
@@ -161,7 +167,7 @@ export class Vine {
 	 * @param {string|number} dateString - The date string to format.
 	 * @returns {string} The formatted date string.
 	 */
-	formatDate(dateString: string | number) {
+	formatDate(dateString: string | number): string {
 		return new Date(dateString).toLocaleString(this.language);
 	}
 
@@ -171,7 +177,7 @@ export class Vine {
 	 * @param {string|number} dateString - The date string to format.
 	 * @returns {string} The formatted time ago string.
 	 */
-	formatTimeAgo(dateString: string | number) {
+	formatTimeAgo(dateString: string | number): string {
 		return Math.floor((new Date().getTime() - new Date(dateString).getTime()) / (1000 * 60)) + "m";
 	}
 }

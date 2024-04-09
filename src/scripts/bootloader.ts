@@ -1,7 +1,8 @@
-showRuntime("BOOT: Booterloader starting");
-if (typeof browser === "undefined") {
-	var browser = chrome;
-}
+import browser from "webextension-polyfill";
+import { Logger } from "./Logger";
+import { VineFetch } from "./VineFetch";
+import { Api } from "./Api";
+import { GlobalSettings, SettingsFactory, TypeGlobalSettings } from "./Settings";
 
 //Create the 2 grids/tabs
 var gridRegular = null;
@@ -10,32 +11,6 @@ var gridHidden = null; //Will be populated after the grid will be created.
 
 //Inject the script to fix the infinite loading wheel into the main environment.
 var scriptTag = document.createElement("script");
-
-//Constants
-const CONSENSUS_NO_FEES = 0;
-const CONSENSUS_FEES = 1;
-const NO_CONSENSUS = null;
-
-const NOT_DISCARDED_ORDER_SUCCESS = -4;
-const NOT_DISCARDED_NO_STATUS = -3;
-const NOT_DISCARDED_OWN_VOTE = -2;
-const NOT_DISCARDED_NO_FEES = -1;
-const NOT_DISCARDED = 0;
-const DISCARDED_WITH_FEES = 1;
-const DISCARDED_OWN_VOTE = 2;
-const DISCARDED_ORDER_FAILED = 4;
-
-const VERSION_MAJOR_CHANGE = 3;
-const VERSION_MINOR_CHANGE = 2;
-const VERSION_REVISION_CHANGE = 1;
-const VERSION_NO_CHANGE = 0;
-
-var toolbarsDrawn = false;
-
-const DEBUGGER_TITLE = "Vine Helper - Debugger";
-const VOTING_TITLE = "Vine Helper - voting feature";
-const VINE_INFO_TITLE = "Vine Helper update info";
-const GDPR_TITLE = "Vine Helper - GDPR";
 
 //Do not run the extension if ultraviner is running
 if (!ultraviner) {
@@ -47,17 +22,6 @@ if (!ultraviner) {
 
 //Initiate the extension
 async function init() {
-	//Wait for the config to be loaded before running this script
-	showRuntime("BOOT: Waiting on config to be loaded...");
-	while (Object.keys(appSettings).length === 0) {
-		await new Promise((r) => setTimeout(r, 10));
-	}
-	showRuntime("BOOT: Config available. Begining init() function");
-
-	if (appSettings.thorvarium.darktheme) {
-		document.getElementsByTagName("body")[0].classList.add("darktheme");
-	}
-
 	//### Run the boot sequence
 	Notifications.init(); //Ensure the container for notification was created, in case it was not in preboot.
 	displayAccountData();
@@ -808,23 +772,6 @@ window.addEventListener("keyup", async function (e) {
 	if (excl.indexOf(nodeName) != -1) {
 		return false;
 	}
-
-	//Debug: secret keybind to generate dummy hidden items
-	/*if (e.key == "g") {
-		if (
-			this.confirm(
-				"Generate 10,000 dummy items in local storage? (Will take ~1min)"
-			)
-		) {
-			for (i = 0; i < 10000; i++) {
-				fakeAsin = generateString(10);
-				HiddenList.addItem(fakeAsin, false);
-			}
-			HiddenList.saveList();
-			this.alert("10000 items generated");
-		}
-	}
-	*/
 
 	const keybindingMap = {
 		[appSettings.keyBindings?.hideAll]: hideAllItems,
