@@ -90,6 +90,55 @@ abstract class AbstractSettings<T> extends EventTarget {
   }
 
   /**
+   * Set Property
+   * Takes a key and value where the key in object dot notation and sets the value of the property. When the key;s
+   * prefix is not found, it will create the prefix unless throwIfPrefixNotFound is set to true.
+   */
+  async setProperty(key: string, value: any, throwIfPrefixNotFound = false) {
+    const settings = this.clone();
+    this.util.objPropertySetDeep(settings, key, value, throwIfPrefixNotFound);
+    await this.set(settings);
+  }
+
+  /**
+   * Set Properties
+   * Takes an object of key value pairs where the key is in object dot notation and sets the value of the property.
+   * This is an optimization over setProperty as it only saves the settings once.
+   */
+  async setProperties(properties: { [key: string]: any }) {
+    const settings = this.clone();
+    for (const key in properties) {
+      this.util.objPropertySetDeep(settings, key, properties[key]);
+    }
+    await this.set(settings);
+  }
+
+  /**
+   * Get Property
+   * Takes a key in object dot notation and returns the value of the property.
+   */
+  getProperty(key: string, defaultValue?: any) {
+    return this.util.objPropertyGetDeep(this.settings, key, defaultValue);
+  }
+
+  /**
+   * Get Properties
+   * Takes an array of key value pairs where the key is in object dot notation and the value is the default value.
+   * 
+   * @param {string[] | [string, any][]} - The properties to get.
+   * @returns {any[]} - The values of the properties.
+   */
+  getProperties(properties: string[] | [string, any][]): any[] {
+    const settings: any = [];
+    for (const prop of properties) {
+      const key = Array.isArray(prop) ? prop[0] : prop;
+      const defaultValue = Array.isArray(prop) ? prop[1] : undefined;
+      settings.push(this.util.objPropertyGetDeep(this.settings, key, defaultValue));
+    }
+    return settings;
+  }
+
+  /**
    * The local storage listener.
    * 
    * @param changes - The changes.
@@ -120,23 +169,25 @@ export type TypeGlobalSettings = {
     compactToolbar: boolean;
   };
   general: {
-    uuid: string | null;
-    topPagination: boolean;
-    displayFirstSeen: boolean;
     bookmark: boolean;
     bookmarkDate: number;
+    displayFirstSeen: boolean;
+    displayNewItemNotifications: boolean;
+    displayVariantIcon: boolean;
+    firstVotePopup: boolean;
+    GDPRPopup: boolean;
+    hiddenItemsCacheSize: number;
     hideKeywords: string[];
     highlightKeywords: string[];
-    displayVariantIcon: boolean;
-    versionInfoPopup: number;
-    GDPRPopup: boolean;
-    firstVotePopup: boolean;
-    newItemNotification: boolean;
-    displayNewItemNotifications: boolean;
-    newItemNotificationImage: boolean;
-    hiddenItemsCacheSize: number;
-    newItemNotificationSound: boolean;
     newItemMonitorNotificationSound: boolean;
+    newItemNotification: boolean;
+    newItemNotificationImage: boolean;
+    newItemNotificationSound: boolean;
+    topPagination: boolean;
+    uuid: string | null;
+    versionCurrent: string;
+    versionInfoPopup: boolean;
+    versionPrevious: string | undefined;
   };
   keyBindings: {
     active: boolean;
@@ -158,21 +209,21 @@ export type TypeGlobalSettings = {
     guid: string | null;
   };
   thorvarium: {
-    darktheme: boolean;
-    mobileios: boolean;
-    mobileandroid: boolean;
-    smallItems: boolean;
-    removeHeader: boolean;
-    removeFooter: boolean;
-    removeAssociateHeader: boolean;
-    moreDescriptionText: boolean;
-    ETVModalOnTop: boolean;
     categoriesWithEmojis: boolean;
-    paginationOnTop: boolean;
     collapsableCategories: boolean;
-    stripedCategories: boolean;
+    darktheme: boolean;
+    ETVModalOnTop: boolean;
     limitedQuantityIcon: boolean;
+    mobileandroid: boolean;
+    mobileios: boolean;
+    moreDescriptionText: boolean;
+    paginationOnTop: boolean;
+    removeAssociateHeader: boolean;
+    removeFooter: boolean;
+    removeHeader: boolean;
     RFYAFAAITabs: boolean;
+    smallItems: boolean;
+    stripedCategories: boolean;
   };
 };
 
@@ -205,7 +256,9 @@ export class GlobalSettings extends AbstractSettings<TypeGlobalSettings> {
       newItemNotificationSound: false,
       topPagination: true,
       uuid: null,
-      versionInfoPopup: 0,
+      versionCurrent: "0.0.0",
+      versionPrevious: undefined,
+      versionInfoPopup: false,
     },
     hiddenTab: {
       active: true,
@@ -225,6 +278,7 @@ export class GlobalSettings extends AbstractSettings<TypeGlobalSettings> {
     thorvarium: {
       categoriesWithEmojis: false,
       collapsableCategories: false,
+      darktheme: false,
       ETVModalOnTop: false,
       limitedQuantityIcon: false,
       mobileandroid: false,

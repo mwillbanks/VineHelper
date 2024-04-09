@@ -1,6 +1,18 @@
-import { Logger as TSLog, ILogObj, ISettingsParam } from "tslog";
+import { Logger as TSLog, ILogObj, ISettingsParam, ILogObjMeta } from "tslog";
 
+/**
+ * Logger
+ * 
+ * This class is a wrapper around the TSLog class that provides a more convenient way to create
+ * loggers with a specific scope and settings.
+ */
 export class Logger extends TSLog<ILogObj> {
+  /**
+   * Creates an instance of Logger.
+   * @param scope - The scope of the logger.
+   * @param settings - The settings for the logger.
+   * @see {@link https://tslog.js.org/interfaces/isettingsparam.html}
+   */
   constructor(scope = "vh", settings: ISettingsParam<ILogObj> = {}) {
     settings.name = scope;
     settings.minLevel = settings.minLevel || 0;
@@ -8,7 +20,34 @@ export class Logger extends TSLog<ILogObj> {
     super(settings);
   }
 
-  isDebugEnabled() : boolean {
+  /**
+   * Log a message to the console.
+   * 
+   * This function will only log messages if the logger is in debug mode.
+   * 
+   * @param logLevelId - The log level id.
+   * @param logLevelName - The log level name.
+   * @param args - The arguments to log.
+   * @returns The log object.
+   * @see {@link https://tslog.js.org/interfaces/ilogobj.html}
+   * @see {@link https://tslog.js.org/interfaces/ilogobjmeta.html}
+   */
+  log(logLevelId: number, logLevelName: string, ...args: unknown[]): (ILogObj & ILogObjMeta) | undefined {
+    if (this.isDebugEnabled()) {
+      return super.log(logLevelId, logLevelName, ...args);
+    }
+  }
+
+  /**
+   * Check if the logger is in debug mode.
+   * 
+   * If the DEBUG variable / environmental variable is set, and the namespace matches a
+   * pattern, then we are in debug mode and we will log all messages. Otherwise, the log
+   * messages will not be displayed.
+   * 
+   * @returns true if the logger is in debug mode, false otherwise.
+   */
+  isDebugEnabled(): boolean {
     const DEBUG = window.DEBUG || process?.env?.DEBUG || "";
 
     const scope: string[] = [];
@@ -25,6 +64,12 @@ export class Logger extends TSLog<ILogObj> {
     return DEBUG !== "" && (DEBUG === "*" || pattern.test(namespace));
   }
 
+  /**
+   * Get a sub logger with a specific scope.
+   * 
+   * @param scope - The scope.
+   * @returns The sub logger.
+   */
   scope(scope: string): Logger {
     return this.getSubLogger({ name: scope }) as Logger;
   }

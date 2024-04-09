@@ -1,33 +1,15 @@
-import browser from "webextension-polyfill";
-import { Logger } from "./Logger";
-import { VineFetch } from "./VineFetch";
-import { Api } from "./Api";
-import { GlobalSettings, SettingsFactory, TypeGlobalSettings } from "./Settings";
-
 //Create the 2 grids/tabs
 var gridRegular = null;
 var gridUnavailable = null; //Will be populated after the grid will be created.
 var gridHidden = null; //Will be populated after the grid will be created.
-
-//Inject the script to fix the infinite loading wheel into the main environment.
-var scriptTag = document.createElement("script");
-
-//Do not run the extension if ultraviner is running
-if (!ultraviner) {
-	init();
-}
 
 //#########################
 //### Main flow
 
 //Initiate the extension
 async function init() {
-	//### Run the boot sequence
-	Notifications.init(); //Ensure the container for notification was created, in case it was not in preboot.
 	displayAccountData();
 	initFetchProductData();
-	showGDPRPopup();
-	await initFlushTplCache(); //And display the version changelog popup
 	initInjectScript();
 	initSetPageTitle();
 	await initCreateTabs();
@@ -88,42 +70,6 @@ function displayAccountData() {
 
 function initFetchProductData() {
 	fetchProductsData(getAllAsin()); //Obtain the data to fill the toolbars with it.
-}
-
-async function showGDPRPopup() {
-	if (appSettings.general.GDPRPopup == true || appSettings.general.GDPRPopup == undefined) {
-		prom = await Tpl.loadFile("view/popup_gdpr.html");
-		let content = Tpl.render(prom);
-
-		let m = DialogMgr.newModal("info");
-		m.title = GDPR_TITLE;
-		m.content = content;
-		m.show();
-
-		appSettings.general.GDPRPopup = false;
-		saveSettings();
-	}
-}
-async function initFlushTplCache() {
-	//Show version info popup : new version
-	if (appVersion != appSettings.general.versionInfoPopup) {
-		showRuntime("BOOT: Flushing template cache");
-		await TplMgr.flushLocalStorage(); //Delete all template from cache
-
-		if (compareVersion(appSettings.general.versionInfoPopup, appVersion) > VERSION_REVISION_CHANGE) {
-			prom = await Tpl.loadFile("view/popup_changelog.html");
-			Tpl.setVar("appVersion", appVersion);
-			let content = Tpl.render(prom);
-
-			let m = DialogMgr.newModal("info");
-			m.title = VINE_INFO_TITLE;
-			m.content = content;
-			m.show();
-		}
-
-		appSettings.general.versionInfoPopup = appVersion;
-		saveSettings();
-	}
 }
 
 function initInjectScript() {
@@ -276,8 +222,6 @@ async function initInsertBookmarkButton() {
 		});
 	}
 }
-
-async function getCurrentTimeFromServer() {}
 
 function initFixPreviousButton() {
 	//Place the text-content of the Previous button before the other child elements.
@@ -717,43 +661,6 @@ browser.runtime.onMessage.addListener(async (data, sender, sendResponse) => {
 			await Notifications.pushNotification(note);
 		}
 	}
-
-	if (data.type == "newItem") {
-		sendResponse({ success: true });
-		// if (
-		// 	data.index < 10 && //Limit the notification to the top 10 most recents
-		// 	vineBrowsingListing && //Only show notification on listing pages
-		// 	appSettings.general.displayNewItemNotifications
-		// ) {
-		// 	console.log("New notification!");
-		// 	let { date, asin, title, search, img_url, domain, etv } = data;
-
-		// 	//Generate the content to be displayed in the notification
-		// 	const prom = await Tpl.loadFile("/view/notification_new_item.html");
-
-		// 	Tpl.setIf("show_image", appSettings.general.newItemNotificationImage);
-		// 	Tpl.setVar("date", date);
-		// 	Tpl.setVar("search", search);
-		// 	Tpl.setVar("asin", asin);
-		// 	Tpl.setVar("description", title);
-		// 	Tpl.setVar("img_url", img_url);
-
-		// 	//Generate the notification
-		// 	let note2 = new ScreenNotification();
-		// 	note2.title = "New item detected !";
-		// 	note2.lifespan = 60;
-
-		// 	//Play the notification sound
-		// 	if (appSettings.general.newItemNotificationSound) {
-		// 		note2.sound = "resource/sound/notification.mp3";
-		// 	}
-		// 	note2.content = Tpl.render(prom);
-		// 	Notifications.pushNotification(note2);
-		// }
-	}
-	if (data.type == "vineCountry") {
-		sendResponse({ success: true });
-	}
 });
 
 //Key bindings/keyboard shortcuts for navigation
@@ -800,23 +707,6 @@ window.addEventListener("keyup", async function (e) {
 		}
 	}
 });
-
-function compareVersion(oldVer, newVer) {
-	if (oldVer == null || oldVer == undefined || oldVer == true) return VERSION_MAJOR_CHANGE;
-
-	if (oldVer == false || oldVer == newVer) return VERSION_NO_CHANGE;
-
-	const regex = /^([0-9]+)\.([0-9]+)(?:\.([0-9]+))?$/;
-	const arrOldVer = oldVer.match(regex);
-	const arrNewVer = newVer.match(regex);
-
-	if (arrOldVer[1] != arrNewVer[1]) return VERSION_MAJOR_CHANGE;
-	if (arrOldVer[2] != arrNewVer[2]) return VERSION_MINOR_CHANGE;
-	if (arrOldVer.length == 4 && arrNewVer.length == 4) {
-		if (arrOldVer[3] != arrNewVer[3]) return VERSION_REVISION_CHANGE;
-		else return VERSION_NO_CHANGE;
-	} else return VERSION_REVISION_CHANGE;
-}
 
 function escapeHTML(value) {
 	let val = String(value);

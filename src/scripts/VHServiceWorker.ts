@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill"; // Cross-Browser Compatibility
+import browser, { Runtime } from "webextension-polyfill"; // Cross-Browser Compatibility
 import { Socket, io } from "socket.io-client"; // Websockets
 import { Vine } from "./Vine"; // Vine API & Attributes
 import { Logger } from "./Logger"; // Logging
@@ -17,8 +17,8 @@ class VHServiceWorker {
 
 	protected api: Api;
 	protected log: Logger;
-	protected settings: TypeGlobalSettings = {} as TypeGlobalSettings;
 	protected vine: Vine;
+	protected settings!: GlobalSettings; // This will be set in the init function
 	protected websocket!: Socket // We force unwrap the check (!) as we initialize this through a method in the constructor
 
 	/**
@@ -52,21 +52,46 @@ class VHServiceWorker {
 	protected async init() {
 		this.log.info("Initializing VHServiceWorker...");
 
-		const settings = await SettingsFactory.create<GlobalSettings>("settings", this.log);
-		this.settings = settings.get();
-		settings.addEventListener("change", (event) => {
-			const customEvent = event as CustomEvent<TypeGlobalSettings>;
-			this.settings = customEvent.detail;
-
-			this.broadcastChannel.postMessage({
-				type: "settings",
-				settings: this.settings,
-			});
-		});
+		await this.initSettings();
+		browser.runtime.onInstalled.addListener(this.onInstalled.bind(this));
+		
 		this.initMessageListeners();
 		this.initWebsocket();
 
 		this.log.info("VHServiceWorker initialized.");
+	}
+
+	/**
+	 * Initialize Settings
+	 */
+	protected async initSettings(): Promise<void> {
+		this.settings = await SettingsFactory.create<GlobalSettings>("settings", this.log);
+		this.settings.addEventListener("change", (event) => {
+			const customEvent = event as CustomEvent<TypeGlobalSettings>;
+			const settings = customEvent.detail;
+
+			this.broadcastChannel.postMessage({
+				type: "settings",
+				settings: settings,
+			});
+		});
+	}
+
+	/**
+	 * On Installed
+	 * 
+	 * This method is called when the extension is installed or updated.
+	 */
+	protected async onInstalled(details: Runtime.OnInstalledDetailsType) {
+		this.log.info("Extension installed or updated:", details.reason);
+
+		if (["install", "update"].includes(details.reason)) {
+			await this.settings.setProperties({
+				"general.versionCurrent": browser.runtime.getManifest().version,
+				"general.versionPrevious": details.previousVersion,
+				"general.versionInfoPopup": !!details.previousVersion,
+			});
+		};
 	}
 
 	/**
@@ -118,7 +143,7 @@ class VHServiceWorker {
 			autoConnect: false,
 			reconnection: true,
 			auth: {
-				token: [this.settings.general.uuid, this.vine.queue].join("|"),
+				token: [this.settings.getProperty("general.uuid"), this.vine.queue].join("|"),
 			},
 		});
 

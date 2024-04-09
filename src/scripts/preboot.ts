@@ -29,90 +29,6 @@ var DialogMgr = new ModalMgr();
 var Notifications = new ScreenNotifier();
 var HiddenList = new HiddenListMgr();
 
-function showRuntime(eventName) {
-	arrDebug.push({ time: Date.now() - startTime, event: eventName });
-}
-
-//#########################
-//### Load settings
-
-//This method will initiate the settings for the first time,
-function getDefaultSettings() {
-	//Craft the new settings in JSON
-	settings = {
-		unavailableTab: {
-			active: true,
-			votingToolbar: true,
-			consensusThreshold: 2,
-			unavailableOpacity: 100,
-			selfDiscard: true,
-			consensusDiscard: true,
-			compactToolbar: false,
-		},
-
-		general: {
-			uuid: null,
-			topPagination: true,
-			displayFirstSeen: true,
-			bookmark: false,
-			bookmarkDate: 0,
-			hideKeywords: [],
-			highlightKeywords: [],
-			displayVariantIcon: false,
-			versionInfoPopup: 0,
-			GDPRPopup: true,
-			firstVotePopup: true,
-			newItemNotification: false,
-			displayNewItemNotifications: false,
-			newItemNotificationImage: true,
-			hiddenItemsCacheSize: 9,
-			newItemNotificationSound: false,
-			newItemMonitorNotificationSound: false,
-		},
-
-		keyBindings: {
-			active: true,
-			nextPage: "n",
-			previousPage: "p",
-			RFYPage: "r",
-			AFAPage: "a",
-			AIPage: "i",
-			hideAll: "h",
-			showAll: "s",
-			debug: "d",
-		},
-
-		hiddenTab: {
-			active: true,
-			remote: false,
-		},
-
-		discord: {
-			active: false,
-			guid: null,
-		},
-
-		thorvarium: {
-			mobileios: false,
-			mobileandroid: false,
-			smallItems: false,
-			removeHeader: false,
-			removeFooter: false,
-			removeAssociateHeader: false,
-			moreDescriptionText: false,
-			ETVModalOnTop: false,
-			categoriesWithEmojis: false,
-			paginationOnTop: false,
-			collapsableCategories: false,
-			stripedCategories: false,
-			limitedQuantityIcon: false,
-			RFYAFAAITabs: false,
-		},
-	};
-
-	return settings;
-}
-
 async function loadStyleSheet(path) {
 	prom = await Tpl.loadFile(path);
 	let content = Tpl.render(prom);
@@ -121,53 +37,6 @@ async function loadStyleSheet(path) {
 
 //Loading the settings from the local storage
 async function getSettings() {
-	const data = await chrome.storage.local.get("settings");
-
-	showRuntime("PRE: Done reading settings");
-
-	//If no settings exist already, create the default ones
-	if (data == null || Object.keys(data).length === 0) {
-		showRuntime("Settings not found, generating default configuration...");
-		//Will generate default settings
-		await chrome.storage.local.clear(); //Delete all local storage
-		appSettings = getDefaultSettings();
-		saveSettings();
-	} else {
-		Object.assign(appSettings, data.settings);
-	}
-
-	//V2.2.0: Move the keybinding settings
-	if (appSettings.general.keyBindings !== undefined) {
-		appSettings.keyBindings = {};
-		appSettings.keyBindings.active = appSettings.general.keyBindings;
-		appSettings.keyBindings.nextPage = "n";
-		appSettings.keyBindings.previousPage = "p";
-		appSettings.keyBindings.RFYPage = "r";
-		appSettings.keyBindings.AFAPage = "a";
-		appSettings.keyBindings.AIPage = "i";
-		appSettings.keyBindings.hideAll = "h";
-		appSettings.keyBindings.showAll = "s";
-		appSettings.keyBindings.debug = "d";
-		appSettings.general.keyBindings = undefined;
-		saveSettings();
-	}
-
-	//V2.2.3: Configure garbage collector for hidden items
-	if (appSettings.general.hiddenItemsCacheSize == undefined) {
-		appSettings.general.hiddenItemsCacheSize = 9;
-		saveSettings();
-	}
-	if (appSettings.general.newItemNotificationImage == undefined) {
-		appSettings.general.newItemNotificationImage = true;
-		saveSettings();
-	}
-
-	//v2.2.7
-	if (appSettings.general.displayNewItemNotifications == undefined) {
-		appSettings.general.displayNewItemNotifications = appSettings.general.newItemNotification;
-		saveSettings();
-	}
-
 	//v2.3.3
 	if (appSettings.general.hideKeywords == undefined) {
 		appSettings.general.hideKeywords = [];
@@ -234,20 +103,6 @@ async function getSettings() {
 
 	showRuntime("BOOT: Thorvarium country-specific stylesheets injected");
 
-	//Send the country code to the Service Worker
-	browser.runtime.sendMessage({
-		type: "vineCountry",
-		vineCountry: vineCountry,
-	});
-	setInterval(async () => {
-		browser.runtime.sendMessage({
-			type: "keepAlive",
-		});
-	}, 25000);
-
-	let manifest = chrome.runtime.getManifest();
-	appVersion = manifest.version;
-
 	//If the domain is not Canada, UK or France, de-activate the voting system/unavailable tab
 	if (["ca", "co.uk", "fr"].indexOf(vineDomain) == -1) {
 		appSettings.unavailableTab.votingToolbar = false;
@@ -258,37 +113,6 @@ async function getSettings() {
 	//If the domain if not from outside the countries supported by the discord API, disable discord
 	if (["ca", "com", "co.uk"].indexOf(vineDomain) == -1) {
 		appSettings.discord.active = false;
-	}
-
-	switch (vineDomain) {
-		case "ca":
-			vineLocale = "en-CA";
-			vineCurrency = "CAD";
-			break;
-		case "com":
-			vineLocale = "en-US";
-			vineCurrency = "USD";
-			break;
-		case "co.uk":
-			vineLocale = "en-GB";
-			vineCurrency = "GBP";
-			break;
-		case "co.jp":
-			vineLocale = "ja-JP";
-			vineCurrency = "JPY";
-			break;
-		case "de":
-			vineLocale = "de-DE";
-			vineCurrency = "EUR";
-			break;
-		case "fr":
-			vineLocale = "fr-FR";
-			vineCurrency = "EUR";
-			break;
-		case "es":
-			vineLocale = "es-ES";
-			vineCurrency = "EUR";
-			break;
 	}
 
 	//Determine if we are browsing a queue
@@ -359,33 +183,6 @@ if (!regex.test(window.location.href)) {
 } else {
 	ultraviner = true;
 	console.log("VineHelper detected UltraViner. Disabling VineHelper on this page.");
-}
-
-//#################################################3
-//### UTILITY FUNCTIONS
-
-async function saveSettings() {
-	try {
-		chrome.storage.local.set({ settings: appSettings });
-	} catch (e) {
-		if (e.name === "QuotaExceededError") {
-			// The local storage space has been exceeded
-			alert("Local storage quota exceeded! Hidden items will be cleared to make space.");
-			await chrome.storage.local.set({ hiddenItems: [] });
-			saveSettings();
-		} else {
-			// Some other error occurred
-			alert("Error:", e.name, e.message);
-			return false;
-		}
-	}
-
-	let note = new ScreenNotification();
-	note.title = "Settings saved.";
-	note.lifespan = 3;
-	note.content = "";
-	note.title_only = true;
-	Notifications.pushNotification(note);
 }
 
 function getRunTime() {
@@ -488,15 +285,4 @@ function getStorageSizeFull() {
 			}
 		});
 	});
-}
-
-function generateString(length) {
-	let result = "";
-	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	const charactersLength = characters.length;
-	for (let i = 0; i < length; i++) {
-		result += characters.charAt(Math.floor(Math.random() * charactersLength));
-	}
-
-	return result;
 }
