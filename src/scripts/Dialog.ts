@@ -50,7 +50,7 @@ export class Dialog extends Modal {
       footer = this.util.createElement({
         tag: "div", attributes: { class: "btn-group" }, children: buttons.map(({ text, class: btnClass, callback }) => {
           const button = this.util.createElement({
-            tag: "button", attributes: { class: `btn ${btnClass}`, textContent: text, click: async (event) => {
+            tag: "button", attributes: { class: `btn ${btnClass}`, textContent: text, onclick: async (event) => {
                 if (typeof callback === "function") {
                   await callback();
                 }

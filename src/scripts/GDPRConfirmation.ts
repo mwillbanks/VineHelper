@@ -7,7 +7,6 @@ import { Dialog } from "./Dialog";
  */
 export class GDPRConfirmation extends Dialog {
   protected settings: GlobalSettings;
-  protected dialogElement?: HTMLElement;
 
   /**
    * Creates an instance of GDPRConfirmation.

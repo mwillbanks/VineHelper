@@ -71,6 +71,10 @@ export class Logger extends TSLog<ILogObj> {
    * @returns The sub logger.
    */
   scope(scope: string): Logger {
-    return this.getSubLogger({ name: scope }) as Logger;
+    const settings = structuredClone(this.settings);
+    settings.parentNames = settings.parentNames || [];
+    settings.parentNames.push(settings.name || "");
+
+    return new Logger(scope, settings);
   }
 }

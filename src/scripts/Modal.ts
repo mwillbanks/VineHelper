@@ -69,6 +69,7 @@ export class Modal {
 
     const bsModal = new BSModal(modal, options);
     modal.addEventListener("hidden.bs.modal", () => {
+      console.log("hidden");
       this.modals.delete(modal);
       bsModal.dispose();
       modal.remove();

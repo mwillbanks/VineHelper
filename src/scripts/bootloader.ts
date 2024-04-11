@@ -17,7 +17,6 @@ async function init() {
 	await initInsertBookmarkButton();
 	initFixPreviousButton();
 	await initDrawToolbars();
-	HiddenList.garbageCollection();
 }
 
 //If we are on the Account page, display additional info

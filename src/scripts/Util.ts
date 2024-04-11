@@ -31,7 +31,11 @@ export class Util {
 	 * @returns The string with decoded HTML entities.
 	 */
 	decodeHtmlEntities(str: string) {
-		return str.replace(/&#(\d+);/g, (_match, dec) => String.fromCharCode(dec));
+		return str.replace(/&([#]?(x)?[0-9a-z]+);/gi, (match) => {
+			const element = document.createElement('textarea');
+			element.innerHTML = match || '';
+			return element.textContent || '';
+		});
 	}
 
 	/**
@@ -64,7 +68,7 @@ export class Util {
 		const log = this.logger.scope("setLocalStorage");
 		log.debug("params", arguments);
 
-		const data : Record<string, any> = {};
+		const data: Record<string, any> = {};
 		data[key] = value;
 		log.debug(`set:${key}`, { data });
 
@@ -134,15 +138,15 @@ export class Util {
 	 */
 	deepFreeze(obj: any) {
 		Object.freeze(obj);
-	
+
 		for (const key of Object.getOwnPropertyNames(obj)) {
 			const value = obj[key];
-	
+
 			if (typeof value === "object" && !Object.isFrozen(value)) {
 				this.deepFreeze(value);
 			}
 		}
-	
+
 		return obj;
 	}
 
@@ -203,10 +207,18 @@ export class Util {
 		const { tag, attributes, children } = elementSpec;
 		const element = document.createElement(tag);
 		for (const [key, value] of Object.entries(attributes)) {
+			if (key === "class") {
+				const classList = (value as string).split(" ");
+				element.classList.add(...classList);
+				continue;
+			}
+			if (typeof (element as any)[key] !== undefined) {
+				(element as any)[key] = value;
+				continue;
+			}
 			if (typeof value === "string") {
 				element.setAttribute(key, value);
-			} else if (typeof value === "function") {
-				element.addEventListener(key, value);
+				continue;
 			}
 		}
 
