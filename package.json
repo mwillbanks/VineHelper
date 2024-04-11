@@ -8,7 +8,9 @@
 		"prepare": "husky",
 		"build": "tsc && vite build",
 		"dev": "vite build --watch --mode development",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"test": "vitest",
+		"coverage": "vitest run --coverage"
 	},
 	"repository": {
 		"type": "git",
@@ -45,16 +47,22 @@
 		"@types/bootstrap": "^5.2.10",
 		"@types/collections": "^5.1.5",
 		"@types/node": "^20.12.2",
+		"@webext-core/fake-browser": "^1.3.1",
+		"@webext-core/messaging": "^1.4.0",
+		"@webext-core/storage": "^1.2.0",
 		"archiver": "^7.0.1",
 		"eslint": "^8.57.0",
 		"eslint-config-prettier": "^9.1.0",
 		"husky": "^9.0.11",
+		"jsdom": "^24.0.0",
 		"lint-staged": "^15.2.2",
 		"prettier": "^3.2.5",
 		"release-it": "^17.1.1",
-		"typescript": "^5.2.2",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.4.5",
 		"vite": "^5.2.7",
 		"vite-plugin-web-extension": "^4.1.3",
+		"vitest": "^1.4.0",
 		"webextension-polyfill": "^0.10.0"
 	},
 	"lint-staged": {

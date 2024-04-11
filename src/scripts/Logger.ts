@@ -49,6 +49,9 @@ export class Logger extends TSLog<ILogObj> {
    */
   isDebugEnabled(): boolean {
     const DEBUG = window.DEBUG || process?.env?.DEBUG || "";
+    if (DEBUG === "") {
+      return false;
+    }
 
     const scope: string[] = [];
     this.settings.parentNames?.forEach((name: string) => {

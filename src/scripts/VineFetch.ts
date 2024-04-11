@@ -32,8 +32,8 @@ export class VineFetch {
    * This object is used to match the path portion of the url to a interceptor method.
    */
   protected urlStartToMethod: { [key: string]: Function } = {
-    'api/voiceOrders': this.responseOrders,
-    'api/recommendations': this.responseRecommendations,
+    '/api/voiceOrders': this.responseOrders,
+    '/api/recommendations': this.responseRecommendations,
   };
 
   /**
@@ -70,9 +70,9 @@ export class VineFetch {
     log.debug("original response", response);
 
     // Match the url to the appropriate method and call it fetching the response.
-    const url = args[0] as string;
+    const url = new URL(args[0] as string);
     for (const [start, method] of Object.entries(this.urlStartToMethod)) {
-      if (url.startsWith(start)) {
+      if (url.pathname.startsWith(start)) {
         response = await method.call(this, args, response);
         break;
       }
@@ -89,7 +89,7 @@ export class VineFetch {
    */
   async responseOrders(request: [RequestInfo, RequestInit], response: Response) {
     const log = this.log.scope("responseOrders");
-    log.debug("params", arguments);
+    log.debug("params", { request, response });
     let lastParent = this.lastParentVariant;
 
     const postData = JSON.parse(request[1].body as string);
@@ -117,7 +117,7 @@ export class VineFetch {
     const message: TypeMessageOrder = {
       type: "order",
       data: {
-        status: responseData.error !== null ? "success" : "failed",
+        status: responseData.error === null ? "success" : "failed",
         error: responseData.error,
         parent_asin: lastParent,
         asin: asin,
@@ -139,7 +139,7 @@ export class VineFetch {
    */
   async responseRecommendations(_request: [RequestInfo, RequestInit], response: Response) {
     const log = this.log.scope("responseRecommendations");
-    log.debug("params", arguments);
+    log.debug("params", { _request, response });
     let lastParent = this.lastParentVariant;
 
     let responseData: any = null;

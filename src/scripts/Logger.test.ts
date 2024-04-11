@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeEach, vi } from 'vitest';
+import { expect, test, describe, beforeEach, vi, afterEach } from 'vitest';
 import { Logger } from './Logger';
 
 describe('Logger', () => {
@@ -6,6 +6,10 @@ describe('Logger', () => {
 
   beforeEach(() => {
     logger = new Logger();
+  });
+
+  afterEach(() => {
+    window.DEBUG = '';
   });
 
   test('log should log messages in debug mode', () => {

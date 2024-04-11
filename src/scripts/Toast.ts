@@ -34,6 +34,14 @@ export class Toast {
 	protected logger: Logger;
 	protected util: Util;
 
+	/**
+	 * Creates an instance of Toast.
+	 * 
+	 * The toast message is shown in a container at the bottom right of the screen.
+	 * 
+	 * @param logger - The logger object.
+	 * @param shadowRoot - The shadow root element.
+	 */
 	constructor({ logger, shadowRoot }: { logger: Logger, shadowRoot?: ShadowRoot }) {
 		this.ANIMATION = true;
 		this.AUTO_HIDE = true;
