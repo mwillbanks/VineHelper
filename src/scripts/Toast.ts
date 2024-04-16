@@ -71,7 +71,7 @@ export class Toast {
 					this.util.createElement({ tag: "div", attributes: { class: "toast-body" } }),
 				]}),
 			] }) as HTMLTemplateElement;
-			this.template = template.content;
+			this.template = template;
 		}
 	}
 

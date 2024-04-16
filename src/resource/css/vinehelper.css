@@ -206,7 +206,7 @@ begin, migrating css into a common file, to allow uniform display and updates
 	--tab-border-active: var(--lapisdark-300);
 }
 .vh-body {
-	background-image: url("/resource/image/logo.png");
+	background-image: url("../image/logo.png");
 	background-position: top right;
 	background-repeat: no-repeat;
 	background-size: 150px 150px;

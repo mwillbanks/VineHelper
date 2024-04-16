@@ -12,46 +12,50 @@
 		}
 	},
 	"icons": {
-		"32": "resource/image/icon-32.png",
-		"48": "resource/image/icon-48.png",
-		"128": "resource/image/icon-128.png"
+		"32": "src/resource/image/icon-32.png",
+		"48": "src/resource/image/icon-48.png",
+		"128": "src/resource/image/icon-128.png"
 	},
 	"action": {
-		"default_popup": "popup/homepage.html",
+		"default_popup": "src/popup/homepage.html",
 		"default_title": "Amazon Vine Helper",
-		"default_icon": "resource/image/icon-48.png"
+		"default_icon": {
+			"32": "src/resource/image/icon-32.png",
+			"48": "src/resource/image/icon-48.png",
+			"128": "src/resource/image/icon-128.png"
+		}
 	},
 	"{{chrome}}.side_panel": {
-		"default_path": "page/sidepanel.html"
+		"default_path": "src/page/sidepanel.html"
 
 	},
 	"{{firefox}}.sidebar_action": {
-		"default_panel": "page/sidepanel.html",
+		"default_panel": "src/page/sidepanel.html",
 		"default_title": "Amazon Vine Helper",
 		"default_icon": {
-			"16": "resource/image/icon-16.png",
-			"32": "resource/image/icon-32.png",
-			"48": "resource/image/icon-48.png"
+			"16": "src/resource/image/icon-16.png",
+			"32": "src/resource/image/icon-32.png",
+			"48": "src/resource/image/icon-48.png"
 		},
 		"open_at_install": false
 	},
 	"options_ui": {
-		"page": "popup/homepage.html"
+		"page": "src/popup/homepage.html"
 	},
 	"web_accessible_resources": [
 		{
 			"resources": [
-				"resource/image/*",
-				"resource/css/vinehelper.css",
-				"view/*",
-				"resource/sound/*",
-				"page/*",
+				"src/resource/image/*",
+				"src/resource/css/vinehelper.css",
+				"src/view/*",
+				"src/resource/sound/*",
+				"src/page/*",
 				"node_modules/vine-styling/desktop/*",
 				"node_modules/vine-styling/mobile/*",
 				"node_modules/debug/src/browser.js",
 				"node_modules/bootstrap/dist/*",
 				"node_modules/bootstrap-icons/*",
-				"scripts/inj.js"
+				"src/scripts/inj.js"
 			],
 			"matches": [
 				"https://*.amazon.ca/*",
@@ -65,8 +69,8 @@
 		}
 	],
 	"background": {
-		"{{chrome}}.service_worker": "scripts/VHServiceWorker.js",
-		"{{firefox}}.scripts": ["scripts/VHServiceWorker.js"],
+		"{{chrome}}.service_worker": "src/scripts/VHServiceWorker.ts",
+		"{{firefox}}.scripts": ["src/scripts/VHServiceWorker.ts"],
 		"type": "module"
 	},
 	"content_security_policy": {
@@ -75,15 +79,15 @@
 	"content_scripts": [
 		{
 			"css": [
-				"resource/css/grid.css",
-				"resource/css/icon.css",
-				"resource/css/main.css",
-				"resource/css/modal.css",
-				"resource/css/notification.css",
-				"resource/css/toolbar.css",
-				"resource/css/vinehelper.css"
+				"src/resource/css/grid.css",
+				"src/resource/css/icon.css",
+				"src/resource/css/main.css",
+				"src/resource/css/modal.css",
+				"src/resource/css/notification.css",
+				"src/resource/css/toolbar.css",
+				"src/resource/css/vinehelper.css"
 			],
-			"js": ["scripts/VHContentScript.js"],
+			"js": ["src/scripts/VHContentScript.ts"],
 			"matches": [
 				"https://*.amazon.ca/vine/*",
 				"https://*.amazon.de/vine/*",
