@@ -39,16 +39,20 @@ abstract class AbstractSettings<T> extends EventTarget {
   constructor({ logger, cb }: { logger: Logger, cb?: (instance: AbstractSettings<T>) => void }) {
     super();
 
-    this.logger = logger.scope(`settings:${name}`);
+    this.logger = logger;
     this.util = new Util({ logger });
 
-    this.init(cb);
+    // only because javascript classes are janky and the abstract class is initialized before the child class
+    setTimeout(() => {
+      this.init(cb);
+    }, 0);
   }
 
   /**
    * Initialize the settings.
    */
   async init(cb?: (instance: AbstractSettings<T>) => void) {
+    this.logger = this.logger.scope(`settings:${this.name}`)
     this.logger.info("Initializing settings");
     const settings = await this.util.getLocalStorage<T>(this.name, this.defaults);
 
@@ -233,8 +237,8 @@ export type TypeGlobalSettings = {
  * @template TypeGlobalSettings - The type of the global settings.
  */
 export class GlobalSettings extends AbstractSettings<TypeGlobalSettings> {
-  name = "settings";
-  defaults = {
+  protected name = "settings";
+  protected defaults = {
     discord: {
       active: false,
       guid: null,
@@ -302,6 +306,10 @@ export class GlobalSettings extends AbstractSettings<TypeGlobalSettings> {
       votingToolbar: true,
     },
   };
+
+  constructor({ logger, cb }: { logger: Logger, cb?: (instance: AbstractSettings<TypeGlobalSettings>) => void }) {
+    super({ logger, cb });
+  }
 }
 
 /**
@@ -362,8 +370,8 @@ export type TypeSidePanelSettings = {
  * @template TypeSidePanelSettings - The type of the side panel settings.
  */
 export class SidePanelSettings extends AbstractSettings<TypeSidePanelSettings> {
-  name = "vhSidePanel";
-  defaults = {
+  protected name = "vhSidePanel";
+  protected defaults = {
     feed: {
       title: "Feed Configuration",
       isConfigurable: true,
@@ -396,6 +404,10 @@ export class SidePanelSettings extends AbstractSettings<TypeSidePanelSettings> {
     },
     tabs: {},
   };
+
+  constructor({ logger, cb }: { logger: Logger, cb?: (instance: AbstractSettings<TypeSidePanelSettings>) => void }) {
+    super({ logger, cb });
+  }
 };
 
 /**

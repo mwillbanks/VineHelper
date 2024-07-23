@@ -36,7 +36,7 @@ export class Api {
 
     let products: TypeProduct[] = [];
     try {
-      log.debug("params", arguments);
+      // log.debug("params", arguments);
       const response = await fetch(this.baseUrl + '/vinehelper.php?data=' + JSON.stringify({
         ...this.defaultVars,
         action: "getinfo",

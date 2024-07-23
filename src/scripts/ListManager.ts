@@ -352,7 +352,7 @@ abstract class AbstractListManager<IT extends IndexableType> extends EventTarget
    * @returns {void}
    */
   addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void {
-    this.logger.debug('Adding event listener', { ...arguments });
+    this.logger.debug('Adding event listener', { type, callback, options });
 
     super.addEventListener(type, callback, options);
   }
@@ -366,7 +366,7 @@ abstract class AbstractListManager<IT extends IndexableType> extends EventTarget
    * @returns {void}
    */
   removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions | undefined): void {
-    this.logger.debug('Removing event listener', { ...arguments });
+    this.logger.debug('Removing event listener', { type, callback, options });
 
     super.removeEventListener(type, callback, options);
   }
@@ -522,7 +522,7 @@ export class ListManagerFactory {
    * The instance name to type.
    */
   private static instanceNameToType: { [key: string]: typeof ProductListManager | typeof HiddenProductListManager | typeof PinnedProductListManager | typeof NotificationListManager } = {
-    product: ProductListManager,
+    products: ProductListManager,
     hiddenProducts: HiddenProductListManager,
     notifications: NotificationListManager,
     pinnedProducts: PinnedProductListManager,

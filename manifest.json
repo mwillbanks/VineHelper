@@ -58,6 +58,7 @@
 				"src/scripts/inj.js"
 			],
 			"matches": [
+				"https://*.vinehelper.ovh/*",
 				"https://*.amazon.ca/*",
 				"https://*.amazon.es/*",
 				"https://*.amazon.de/*",
@@ -89,6 +90,7 @@
 			],
 			"js": ["src/scripts/VHContentScript.ts"],
 			"matches": [
+				"https://*.vinehelper.ovh/*",
 				"https://*.amazon.ca/vine/*",
 				"https://*.amazon.de/vine/*",
 				"https://*.amazon.de/*/vine/*",

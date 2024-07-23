@@ -1,4 +1,7 @@
 import { Logger as TSLog, ILogObj, ISettingsParam, ILogObjMeta } from "tslog";
+if (typeof window === "undefined") {
+  globalThis.window = globalThis as Window & typeof globalThis;
+}
 
 /**
  * Logger
@@ -48,7 +51,7 @@ export class Logger extends TSLog<ILogObj> {
    * @returns true if the logger is in debug mode, false otherwise.
    */
   isDebugEnabled(): boolean {
-    const DEBUG = window.DEBUG || process?.env?.DEBUG || "";
+    const DEBUG = (globalThis as any)?.DEBUG as string || window?.DEBUG || process?.env?.DEBUG || "";
     if (DEBUG === "") {
       return false;
     }

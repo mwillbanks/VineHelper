@@ -52,11 +52,14 @@ class VHServiceWorker {
 	protected async init() {
 		this.log.info("Initializing VHServiceWorker...");
 
+		browser.runtime.onStartup.addListener(async () => {
+			this.log.info("Extension started.");
+		});
+
 		await this.initSettings();
 		browser.runtime.onInstalled.addListener(this.onInstalled.bind(this));
-		
-		this.initMessageListeners();
 		this.initWebsocket();
+		this.initMessageListeners();
 
 		this.log.info("VHServiceWorker initialized.");
 	}
@@ -139,31 +142,44 @@ class VHServiceWorker {
 	 * Initialize websocket
 	 */
 	protected initWebsocket() {
+		const log = this.log.scope("websocket");
+
+		log.debug("Initializing websocket.");
 		this.websocket = io(Constants.WSS_URL, {
 			autoConnect: false,
+			forceNew: true,
+			transports: ["websocket", "polling"],
 			reconnection: true,
+			reconnectionDelayMax: 5000,
+			rememberUpgrade: true,
+			withCredentials: true,
+			timeout: 5000,
 			auth: {
-				token: [this.settings.getProperty("general.uuid"), this.vine.queue].join("|"),
+				token: ["755c8705-f3d6-11ee-938b-fa163edeed4d", "com"].join("|"),
 			},
 		});
 
 		this.websocket.on("connect", () => {
-			this.log.info("Connected to websocket.");
+			log.info("Connected to websocket.");
+
+			this.websocket.on("disconnect", () => {
+				log.info("Disconnected from websocket.");
+			});
 		});
 
-		this.websocket.on("disconnect", () => {
-			this.log.info("Disconnected from websocket.");
+		this.websocket.on("connect_error", (err) => {
+			log.error("Failed to conenct to websocket.", err);
 		});
 
 		this.websocket.on("error", (error) => {
-			this.log.error("Websocket error:", error);
+			log.error("Websocket error:", error);
 		});
 
-		this.websocket.on("product", async (data) => {
-			this.log.debug("Received product data:", data);
+		this.websocket.on("products", async (data) => {
+			log.debug("Received product data:", data);
 
 			if (!this.feedIsEnabled) {
-				this.log.debug("Feed is disabled, ignoring data.");
+				log.debug("Feed is disabled, ignoring data.");
 				return;
 			}
 
@@ -178,4 +194,10 @@ class VHServiceWorker {
 	}
 }
 
-new VHServiceWorker();
+try {
+	new VHServiceWorker();
+} catch (e) {
+	console.error("Error initializing VHServiceWorker:", e);
+	(e as Error).message = "Error initializing VHServiceWorker: " + (e as Error).message + "\n" + (e as Error).stack;
+	throw e;
+}

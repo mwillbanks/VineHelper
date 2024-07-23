@@ -1,4 +1,8 @@
 import { TypeProductQueue } from "./ListManager";
+import browser from "webextension-polyfill"; // Cross-Browser Compatibility
+if (typeof window === "undefined") {
+  globalThis.window = globalThis as Window & typeof globalThis;
+}
 
 /**
  * Vine Queue Enum
@@ -130,7 +134,7 @@ export class Vine {
 	 * @constructor
 	 */
 	constructor() {
-		this.language = window.navigator.language;
+		this.language = window?.navigator?.language || browser.i18n.getUILanguage();
 		this.country = (this.language.split("-")?.[1] || "US").toUpperCase();
 		if (!vineCountryMap[this.country]) {
 			this.country = "US";

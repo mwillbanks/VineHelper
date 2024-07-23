@@ -1,4 +1,7 @@
 import browser from "webextension-polyfill"; // Cross-Browser Compatibility
+if (typeof window === "undefined") {
+  globalThis.window = globalThis as Window & typeof globalThis;
+}
 import { TypeMessageETV, TypeMessageGeneric, TypeMessageOrder, TypeMessageVariationFixed } from '../types/MessageTypes'; // Type Definitions
 import { Logger } from './Logger'; // Logging
 import { Util } from './Util'; // Utility Methods
@@ -216,6 +219,8 @@ export class VineFetch {
         // amazon uses will attempt to evaluate it and fail since it attempts to utilize it as part of an html
         // attribute. In order to resolve this, we make the string safe for an html attribute by escaping the
         // special characters.
+        // strip out non-alphanumeric characters
+        variation.dimensions[key] = variation.dimensions[key].replace(/[^a-z0-9\s-]/gi, "");
         if (!variation.dimensions[key].match(/[a-z0-9]$/i)) {
           log.debug("fixed special character", variation.dimensions[key]);
           variation.dimensions[key] = variation.dimensions[key] + ` VH${fixed}`;

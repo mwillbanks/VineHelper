@@ -1,3 +1,7 @@
+if (typeof window === "undefined") {
+  globalThis.window = globalThis as Window & typeof globalThis;
+}
+
 /**
  * Represents a class that manages event listeners for DOM elements.
  */

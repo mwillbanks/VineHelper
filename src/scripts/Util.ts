@@ -47,7 +47,11 @@ export class Util {
 	 */
 	async getLocalStorage<T>(key: string, existing?: T): Promise<T> {
 		const log = this.logger.scope("getLocalStorage");
-		log.debug("params", arguments);
+		// @ts-ignore - arguments is invalid in strict mode but honestly, i'm just logging this shit out
+		log.debug("params", {
+			key,
+			existing
+		});
 
 		const data = await browser.storage.local.get(key);
 		log.debug(`get:${key}`, { data });
@@ -66,7 +70,10 @@ export class Util {
 	 */
 	async setLocalStorage(key: string, value: any) {
 		const log = this.logger.scope("setLocalStorage");
-		log.debug("params", arguments);
+		log.debug("params", {
+			key,
+			value
+		});
 
 		const data: Record<string, any> = {};
 		data[key] = value;

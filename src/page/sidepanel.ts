@@ -93,12 +93,15 @@ const logger = new Logger();
 		});
 	});
 
-	const brenda = new Brenda({
-		domain: vine.domain,
-		guid: VH_SETTINGS.discord.guid as string,
-		logger: log,
-		toast,
-	});
+	let BRENDA: Brenda;
+	if (VH_SETTINGS?.discord?.guid) {
+		BRENDA = new Brenda({
+			domain: vine.domain,
+			guid: VH_SETTINGS.discord.guid as string,
+			logger: log,
+			toast,
+		});
+	}
 
 	// @TODO refactor to a ListManager
 	const VH_TAB_PRODUCTS: Record<string, Set<string>> = {};
@@ -159,9 +162,9 @@ const logger = new Logger();
 			case "announce":
 				target.remove();
 
-				if (product && product.etvMin !== undefined) {
+				if (product && product.etvMin !== undefined && BRENDA && !product.announced) {
 					product.announced = true;
-					brenda.announce(asin, String(product.etvMin), product.queue);
+					BRENDA.announce(asin, String(product.etvMin), product.queue);
 					listManagerProduct.put(product);
 				}
 				break;
@@ -481,8 +484,8 @@ const logger = new Logger();
 	});
 
 	/** Settings */
-	const settingsModal = document.querySelector<HTMLDivElement>("vh-settings")!;
-	const settingsTabTemplate = document.querySelector<HTMLTemplateElement>("templateSettingsTabInput")!.content;
+	const settingsModal = document.querySelector<HTMLDivElement>("#vh-settings")!;
+	const settingsTabTemplate = document.querySelector<HTMLTemplateElement>("#templateSettingsTabInput")!.content;
 	settingsModal.addEventListener("show.bs.modal", () => {
 		const settings = VH_SIDE_PANEL_SETTINGS;
 
